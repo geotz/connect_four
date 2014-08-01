@@ -1,0 +1,4 @@
+*.o
+connect_four
+tmp/
+orig/
