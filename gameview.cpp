@@ -8,7 +8,7 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Foobar is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -23,7 +23,7 @@
 #include "game.h"
 #include<cmath>
 
-GameView::GameView(bool fullscreen): _fullscreen(fullscreen), column(7)
+GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
 {
     if (_fullscreen) {
         win = new sf::RenderWindow(sf::VideoMode::getFullscreenModes()[0],
@@ -34,6 +34,7 @@ GameView::GameView(bool fullscreen): _fullscreen(fullscreen), column(7)
     win->setVerticalSyncEnabled(true);
 
     font.loadFromFile("res/JLSSpaceGothicR_NC.otf");
+    font2.loadFromFile("res/DroidSansMono.ttf");
     player[0] = Player(0);
     player[1] = Player(1);
 
@@ -57,6 +58,10 @@ GameView::GameView(bool fullscreen): _fullscreen(fullscreen), column(7)
         txPType[i].setCharacterSize(20);
         txPType[i].setStyle(sf::Text::Regular);
         txPType[i].setColor(player[i].hicolor);
+        txPAlg[i].setFont(font2);
+        txPAlg[i].setCharacterSize(15);
+        txPAlg[i].setStyle(sf::Text::Regular);
+        txPAlg[i].setColor(player[i].hicolor);
     }
 
     txVs.setFont(font);
@@ -66,27 +71,34 @@ GameView::GameView(bool fullscreen): _fullscreen(fullscreen), column(7)
 
     txHelp.setFont(font);
     txHelp.setCharacterSize(20);
+    txHelp.setColor(sf::Color::Yellow);
     txHelp.setStyle(sf::Text::Regular);
     txHelp.setString("Connect Four 2014\n"
                      "   (c) 2014\n"
                      "George M. Tzoumas\n\n"
 
                      "1-7 ... Column to play\n"
-                     "   $ ... Restart\n"
+                     "  $ ... Restart\n"
                      "  @ ... 2-player (human)\n"
-                     "   C ... Compute\n"
-                     "   D ... Demo\n"
-                     "   F ... Forward\n"
-                     "   T ... Takeback\n\n"
+                     "  A ... Algorithm selection\n"
+                     "  C ... Compute\n"
+                     "  D ... Demo\n"
+                     "  F ... Forward\n"
+                     "  T ... Takeback\n\n"
 
                      "  Q or Esc\n"
-                     "      ... Quit\n\n"
+                     "    ... Quit\n\n"
 
-                     "    S ...  Sound on/off\n\n"
+                     "  S ...  Sound on/off\n\n"
 
                      "  Sys-F or Alt-Enter\n"
-                     "      ... Toggle fullscreen\n"
+                     "    ... Toggle fullscreen\n"
                      );
+
+    txMsg.setFont(font2);
+    txMsg.setCharacterSize(15);
+    txMsg.setColor(sf::Color::Cyan);
+    txMsg.setStyle(sf::Text::Regular);
 
     for (int i = 0; i < 7; i++) {
         txColNum[i].setFont(font);
@@ -100,6 +112,11 @@ GameView::GameView(bool fullscreen): _fullscreen(fullscreen), column(7)
     background.setTexture(backgroundTexture);
 
     updateGeometry();
+}
+
+void GameView::setString(sf::Text& tx, const std::string &s)
+{
+    if (tx.getString() != s) tx.setString(s);
 }
 
 void GameView::updateGeometry()
@@ -127,6 +144,9 @@ void GameView::updateGeometry()
     txPType[1].setPosition(size.x-100,5);
     txVs.setPosition(size.x-127,5);
     txHelp.setPosition(size.x+30,40);
+    txMsg.setPosition(size.x+30,size.y-30);
+    txPAlg[0].setPosition(size.x+30,size.y-65);
+    txPAlg[1].setPosition(size.x+30,size.y-50);
 
 //    bool demo[2] = {false, true};
 //    updateState(State(),demo);
@@ -161,9 +181,13 @@ sf::Vector2i GameView::getGrid(sf::Vector2f pos)
 
 void GameView::update(Game *g)
 {
+    static const std::string AB = "Alpha-Beta";
+    static const std::string MC = "Monte-Carlo";
+    static const std::string DRAW = "DRAW";
     State s = g->state();
     for (int i = 0; i < 2; i++) {
-        txPType[i].setString(g->is_demo(i) ? player[i].scomp : player[i].shuman);
+        setString(txPType[i], g->is_demo(i) ? player[i].scomp : player[i].shuman);
+        setString(txPAlg[i], g->think_algo & (1<<(i^1)) ? MC: AB);
     }
     for (int i = 0; i < 7; i++) {
         for (int j = 0; j < 6; j++) {
@@ -180,14 +204,13 @@ void GameView::update(Game *g)
 	}
     if (!s.is_empty()) {
         int l = s.last_column();
-        int h = s.column_height(l);
         mark_pos(s.column_height(l)-1, s.last_column(), s.last_player());
 	}
     if (s.is_terminal()) {
         int p = s.last_player();
         int w = s.winner_info();
-		if (w == 2) txInfo.setString("DRAW");
-		else txInfo.setString(player[p].swin);
+        if (w == 2) setString(txInfo, DRAW);
+        else setString(txInfo, player[p].swin);
         if ((w & 3) < 2) txInfo.setColor(player[p].color);
         else txInfo.setColor(sf::Color::White);
         if ((w & 3) < 2) {
@@ -206,10 +229,11 @@ void GameView::update(Game *g)
 		}
 	} else {
         int p = s.next_player();
-        if (g->is_demo(p)) txInfo.setString(player[p].sthink);
-        else txInfo.setString(player[p].splay);
+        if (g->is_demo(p)) setString(txInfo,player[p].sthink);
+        else setString(txInfo, player[p].splay);
 		txInfo.setColor(player[p].hicolor);
-	}	
+    }
+    setString(txMsg, g->get_msg());
 }
     
 void GameView::render() const 
@@ -230,6 +254,9 @@ void GameView::render() const
     win->draw(txVs);
     win->draw(txPType[1]);
 //    win->popGLStates();
+    win->draw(txMsg);
+    win->draw(txPAlg[0]);
+    win->draw(txPAlg[1]);
     win->display();
 }
 

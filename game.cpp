@@ -8,7 +8,7 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Foobar is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -19,13 +19,16 @@
 
 // game model implementation
 
-#include"game.h"
+#include<sstream>
 
-Game::Game(ViewBase* view, AudioBase* audio): move(0), max_move(0), view(view), audio(audio)
+#include"game.h"
+#include"alphabeta.h"
+#include"mcts.h"
+
+Game::Game(ViewBase* view, AudioBase* audio):
+    view(view), audio(audio), msg(" "), think_algo(2)
 {
-    demo[0] = false; demo[1] = true;
-    audio->play(AudioBase::RESTART);
-    view->update(this);
+    ac_restart();
 }
 
 State Game::state() const
@@ -36,10 +39,43 @@ State Game::state() const
 
 void Game::ac_restart()
 {
-    move = 0; max_move = 0;
-    audio->play(AudioBase::RESTART);
     demo[0] = false; demo[1] = true;
+    move = 0; max_move = 0;
+    depth = 10;
+    audio->play(AudioBase::RESTART);
     view->update(this);
+}
+
+State Game::alphabeta_think()
+{
+    static const int MIN_MOVES = 1000000;
+    int moves = 0;
+    State s = state();
+    State q;
+    State::score_type val = alpha_beta(s, State::MINUS_INFINITY, State::PLUS_INFINITY, true,
+                                       s.next_player(), depth, 0, &q, &moves);
+    std::stringstream ss;
+    ss << "AB(" << s.next_player() << ")" << std::endl
+       << "moves = " << moves << std::endl
+       << "depth = " << depth << std::endl << "score = " << val;
+    msg = ss.str();
+    view->update(this);
+    if (moves < MIN_MOVES) ++depth;
+    return q;
+}
+
+State Game::mcts_think()
+{
+    static const int NUM_SAMPLES = 25000;
+    State::score_type val;
+    State s = state();
+    State q = mcts_analyze(s, NUM_SAMPLES, s.next_player(), &val);
+    std::stringstream ss;
+    ss << "MC(" << s.next_player() << ")" << std::endl
+       << "samples = " << NUM_SAMPLES << std::endl << "score = " << val;
+    msg = ss.str();
+    view->update(this);
+    return q;
 }
 
 bool Game::ac_play(int where)
@@ -48,12 +84,13 @@ bool Game::ac_play(int where)
     if (s.is_terminal()) return false;
     if (demo[s.next_player()]) { // computer play
         State q;
-        if (s.next_player()) {
-            q = mcts_analyze(s, 25000, s.next_player());
-        } else {
-            q = mcts_analyze(s, 50000, s.next_player());
-            //                alpha_beta(s, State::MINUS_INFINITY, State::PLUS_INFINITY, true, false,
-            //                           6, 0, &q);
+        if (s == State()) q = s.make_move(3, s.next_player()); // center heuristic
+        else {
+            if (s.next_player()) { // Yellow
+                q = (think_algo & 1) ? mcts_think() : alphabeta_think();
+            } else {               // Red
+                q = (think_algo & 2) ? mcts_think() : alphabeta_think();
+            }
         }
         audio->play(s.column_height(q.last_column())+1);
         history[move++] = q;
@@ -69,6 +106,7 @@ bool Game::ac_play(int where)
         State q = state();
         if (q.winner() == q.last_player() && demo[q.next_player()])
             audio->play(AudioBase::WINNER);
+//        std::cerr << "heuristic = " << q() << std::endl;
         view->update(this);
         return true;
     }
@@ -92,6 +130,12 @@ void Game::ac_compute()
     demo[s.last_player()] = false;
     view->update(this);
 //        ac_play(); // called from outside, in main loop
+}
+
+void Game::ac_toggle_algo()
+{
+    think_algo = (think_algo + 1) & 3;
+    view->update(this);
 }
 
 bool Game::ac_takeback()

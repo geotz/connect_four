@@ -8,7 +8,7 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Foobar is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -25,7 +25,7 @@
 #include<ostream>
 #include<algorithm>
 #include<strings.h>
-#include<mtcs.h>
+//#include"mcts.h"
 
 #ifdef __linux
 inline int fls(int k) {
@@ -54,19 +54,31 @@ public:
     class iterator {
         int i;
         const State *ref;
+        int sh[7];
     public:
-        iterator(const State &s): i(0), ref(&s) { }
+        iterator(const State &s): i(0), ref(&s) {
+            for (int i = 0; i < 7; ++i) sh[i] = i;
+            std::random_shuffle(sh,sh+7); // randomize branches
+            for (int i = 0; i < 7; i++) {
+                if (ref->column_height(sh[i]) == 6) continue;
+                State s = ref->make_move(sh[i], ref->next_player());
+                if (s.is_terminal()) {
+                    std::swap(sh[0],sh[i]); // prioritize immediate threat
+                    break;
+                }
+            }
+        }
         
         bool hasNext() {
             while (i < 7) {
-                if (ref->column_height(i) < 6) return true;
+                if (ref->column_height(sh[i]) < 6) return true;
                 else ++i;
             }
             return false;
         }
         
         State next() {
-            State s = ref->make_move(i,ref->next_player());
+            State s = ref->make_move(sh[i],ref->next_player());
             ++i;
             return s;
         }
@@ -88,6 +100,10 @@ public:
         int nc = 0;
         for (int i = 0; i < 7; i++)
             if (column_height(i) < 6) ci[nc++] = i;
+        for (int i = 0; i < nc; i++) {
+            State s = make_move(i, next_player());
+            if (s.is_terminal()) return s; // immediate threat!
+        }
         return make_move(ci[rand() % nc], next_player());
     }
     
@@ -134,12 +150,13 @@ public:
     }
     
     int winner() const { return winner_info() & 3; }
-    
+        
     // evaluates ALWAYS for player 0 -- should negate result manually
     score_type operator()() const {
         int w = winner();
         if (w == 3){
-            return mcts(*this, 100);
+//            return mcts(*this, 50);
+            return heuristic_value();
         }
         if (w == 2) return 0;
 //        if (w == -1) return (9.0-(last_column()-3)*(last_column()-3))/3.0;
@@ -198,7 +215,6 @@ private:
         return '.';
     }
     
-    
     // -1 = no line, 0 = X, 1 = O
     int is_line(int k, int start) const {
         if (get(k,start) == get(k,start+1) && get(k,start+1) == get(k,start+2) && 
@@ -225,6 +241,36 @@ private:
             get(r+2,c-2) == get(r+3,c-3)) return get(r,c);
         else return -1;
     }
+
+    // evaluates for player 0 -- negate manually
+    int line_heuristic(int y1, int x1, int y2, int x2) const {
+        int dy = (y1 == y2) ? 0 : (y1 < y2 ? 1: -1 );
+        int dx = (x1 == x2) ? 0 : (x1 < x2 ? 1: -1 );
+        int n[2] = {0};
+        for (int i = 0; i < 4; ++i) {
+            int k = get(y1, x1);
+            if (k >= 0) ++n[k];
+            x1 += dx; y1 += dy;
+        }
+        if (n[0] > 0 && n[1] > 0) return 0;
+        const static int ans[5] = {0, 0x04, 0x10, 0x40, 0xFF};
+        return ans[n[0]] - ans[n[1]];
+    }
+
+    // evaluates for player 0 -- negate manually
+    int heuristic_value() const {
+        int val = 0;
+        for (int i = 0; i < 6; i++) for (int j = 0; j < 4; j++) // horiz
+            val += line_heuristic(i,j,i,j+3);
+        for (int j = 0; j < 7; j++) for (int i = 0; i < column_height(j)-3; i++) // vert
+            val += line_heuristic(i,j,i+3,j);
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 4; j++) // diag UR
+            val += line_heuristic(i,j,i+3,j+3);
+        for (int i = 0; i < 3; i++) for (int j = 3; j < 7; j++) // diag UL
+            val += line_heuristic(i,j,i+3,j-3);
+        return val;
+    }
+
 };
                       
 #endif

@@ -8,7 +8,7 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Foobar is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -22,8 +22,9 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
+#include<string>
+
 #include "connect4.h"
-//#include <alphabeta.h>
 #include "gameview.h"
 #include "audio.h"
 
@@ -34,16 +35,22 @@ class Game {
     bool demo[2];
     ViewBase *view;
     AudioBase *audio;
+    int depth;
+    std::string msg; // algorithm stats
 public:
+    int think_algo; // 0..3, bit 1-X player X, 0=AB 1=MC
+
     Game(ViewBase* view, AudioBase* audio);
 
     bool is_demo(int p) const { return demo[p]; }
     State state() const;
+    const std::string& get_msg() const { return msg; }
 
     void ac_restart();
     bool ac_play(int where = 0);
     bool ac_play(int row, int col);
     void ac_compute();
+    void ac_toggle_algo();
     bool ac_takeback();
     void ac_2player();
     void ac_demo();
@@ -51,6 +58,10 @@ public:
     void ac_toggle_sound();
     void ac_toggle_fullscreen();
     void render() const { view->render(); }
+
+private:
+    State alphabeta_think();
+    State mcts_think();
 };
 
 #endif

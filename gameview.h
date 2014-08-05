@@ -8,7 +8,7 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Foobar is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -25,6 +25,9 @@
 #include <string>
 #include "connect4.h"
 #include <SFML/Graphics.hpp>
+
+#include<iostream>
+#include<string>
 
 class Game;
 
@@ -68,7 +71,10 @@ private:
     std::vector<std::vector<sf::CircleShape> > column;
     Player player[2];
     sf::Font font;
+    sf::Font font2;
     sf::Text txInfo;
+    sf::Text txMsg;
+    sf::Text txPAlg[2];
     sf::Text txColNum[7];
     sf::Text txHelp;
     sf::Text txPType[2], txVs;
@@ -76,6 +82,7 @@ private:
     sf::Sprite background; // (gpu) memory consumption??
     bool _fullscreen;
 
+    void setString(sf::Text& tx, const std::string &s);
     void updateGeometry();
     void mark_pos(int row, int col, int pl);
 };
