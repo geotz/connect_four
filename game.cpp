@@ -116,7 +116,7 @@ bool Game::ac_play(int where)
 
 bool Game::ac_play(int row, int col)
 {
-    State s = state();
+//    State s = state();
     if (col >= 0) return ac_play(col); // && s.column_height(col) == row
     audio->play(AudioBase::ERROR);
     return false;
