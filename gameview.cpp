@@ -108,7 +108,7 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
         txColNum[i].setString(std::string(1,'1'+i));
     }
 
-    backgroundTexture.loadFromFile("res/galaxy.jpg");
+    backgroundTexture.loadFromFile("res/perseus_nasamarshall_3929624300.jpg");
     background.setTexture(backgroundTexture);
 
     updateGeometry();
