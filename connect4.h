@@ -243,9 +243,7 @@ private:
     }
 
     // evaluates for player 0 -- negate manually
-    int line_heuristic(int y1, int x1, int y2, int x2) const {
-        int dy = (y1 == y2) ? 0 : (y1 < y2 ? 1: -1 );
-        int dx = (x1 == x2) ? 0 : (x1 < x2 ? 1: -1 );
+    int line_heuristic(int y1, int x1, int dy, int dx) const {
         int n[2] = {0};
         for (int i = 0; i < 4; ++i) {
             int k = get(y1, x1);
@@ -261,13 +259,13 @@ private:
     int heuristic_value() const {
         int val = 0;
         for (int i = 0; i < 6; i++) for (int j = 0; j < 4; j++) // horiz
-            val += line_heuristic(i,j,i,j+3);
+            val += line_heuristic(i,j,0,1);
         for (int j = 0; j < 7; j++) for (int i = 0; i < column_height(j)-3; i++) // vert
-            val += line_heuristic(i,j,i+3,j);
+            val += line_heuristic(i,j,1,0);
         for (int i = 0; i < 3; i++) for (int j = 0; j < 4; j++) // diag UR
-            val += line_heuristic(i,j,i+3,j+3);
+            val += line_heuristic(i,j,1,1);
         for (int i = 0; i < 3; i++) for (int j = 3; j < 7; j++) // diag UL
-            val += line_heuristic(i,j,i+3,j-3);
+            val += line_heuristic(i,j,1,-1);
         return val;
     }
 
