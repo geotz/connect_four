@@ -31,9 +31,10 @@ typename State::score_type alpha_beta(
                 int max_depth, int cur_depth = 0, State *best = 0, int *moves = 0) 
 {
 //    AlphaBetaDebug foo(max,cur_depth);
-    if (cur_depth == max_depth || s.is_terminal()) {
+    if (cur_depth == max_depth || s.is_terminal())
+    {
         //typename State::score_type score = s()*(3.0/(3.0+cur_depth));
-        typename State::score_type score = s();
+        auto score = s();
         return second_player ? -score : score;
     }
     State sa, sb;
@@ -45,7 +46,7 @@ typename State::score_type alpha_beta(
 //            if (((*moves) & ((1<<20)-1)) == 0) std::cerr << (*moves) << std::endl;
         }
 //        r.dump(std::cerr);
-        typename State::score_type val = alpha_beta<State>(r, alpha, beta, !max, second_player,
+        auto val = alpha_beta<State>(r, alpha, beta, !max, second_player,
                                                           max_depth, cur_depth+1, 0, moves);
 //        std::cerr << val << std::endl;
         if (max) {
@@ -62,7 +63,7 @@ typename State::score_type alpha_beta(
             }
         }
     }
-    if (best) if (max) *best = sa; else *best = sb;
+    if (best) *best = max ? sa : sb;
     return max ? alpha: beta;
 }
 

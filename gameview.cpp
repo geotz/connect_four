@@ -31,7 +31,7 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
     } else {
         win = new sf::RenderWindow(sf::VideoMode(840, 600), "Connect Four 2014");
     }
-    win->setVerticalSyncEnabled(true);
+//    win->setVerticalSyncEnabled(true);
 
     font.loadFromFile("res/JLSSpaceGothicR_NC.otf");
     font2.loadFromFile("res/DroidSansMono.ttf");
@@ -263,7 +263,7 @@ void GameView::render() const
 void GameView::setFullscreen(bool enabled)
 {
     win->close();
-    if (enabled) win->create(sf::VideoMode::getFullscreenModes()[7],
+    if (enabled) win->create(sf::VideoMode::getFullscreenModes()[0],
                              "Connect Four 2014", sf::Style::Fullscreen);
     else win->create(sf::VideoMode(840, 600), "Connect Four 2014");
     updateGeometry();

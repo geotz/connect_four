@@ -40,7 +40,7 @@ struct ViewBase {
 };
 
 struct DummyView: public ViewBase {
-    void update(Game *g) const { }
+    void update(Game *g) { }
 	void render() const { }
     bool is_fullscreen() const { return false; }
     void setFullscreen(bool enabled) { }

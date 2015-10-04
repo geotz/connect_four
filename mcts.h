@@ -34,9 +34,11 @@ typename State::score_type mcts(State s, int num_samples)
     if (w == 1) return -1000;
     
     int nw[3] = {0};
-    for (int i = 0; i < num_samples; i++) {
+    for (int i = 0; i < num_samples; ++i)
+    {
         State r = s;
-        while (!r.is_terminal()) {
+        while (!r.is_terminal())
+        {
             r = r.random_move();
             //            r.dump(std::cerr);
         }
@@ -55,7 +57,8 @@ State mcts_analyze(State s, int num_samples, bool second_player = false, typenam
     vs.reserve(7);
     std::vector<score_type> vp;
     vp.reserve(7);
-    while (it.hasNext()) {
+    while (it.hasNext())
+    {
         State r = it.next();
         vs.push_back(r);
         score_type p = mcts(r,num_samples);
@@ -66,11 +69,13 @@ State mcts_analyze(State s, int num_samples, bool second_player = false, typenam
 //    std::copy(vp.begin(), vp.end(), std::ostream_iterator<score_type>(std::cerr, " "));
 //    std::cerr << std::endl;
     typename std::vector<score_type>::iterator mit;
-    if (!second_player) {
+    if (!second_player)
+    {
         mit = std::max_element(vp.begin(),vp.end());
         if (score) *score = *mit;
 //        std::cerr << "score = " << *mit << std::endl;
-    } else {
+    } else
+    {
         mit = std::min_element(vp.begin(),vp.end());
         if (score) *score = -(*mit);
 //        std::cerr << "score = " <<- (*mit) << std::endl;

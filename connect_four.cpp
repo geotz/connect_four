@@ -38,6 +38,7 @@
 #include "gameview.h"
 #include "audio.h"
 #include "game.h"
+#include "framerateadjuster.h"
 
 int main(int argc, char **argv)
 {
@@ -52,6 +53,8 @@ int main(int argc, char **argv)
 
     std::srand(std::time(NULL));
     sf::RenderWindow *win = gv.getWindow();
+    FrameRateAdjuster fps{15};
+//    win->setFramerateLimit(0);
     while (win->isOpen())
     {
         sf::Event event;
@@ -133,7 +136,9 @@ int main(int argc, char **argv)
         }
         
         game.render();
+        fps();
         if (game.is_demo(game.state().next_player())) game.ac_play();
     }
     return 0;
 }
+

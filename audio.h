@@ -36,10 +36,10 @@ struct AudioBase {
 };
 
 struct DummyAudioInterface: public AudioBase {
-    void play(int) const { }
-    void setEnabled(bool) const { }
+    void play(int) { }
+    void setEnabled(bool) { }
     bool is_enabled() const { return false; }
-    void toggle() const { }
+    void toggle() { }
 };
 
 class AudioInterface: public AudioBase {
