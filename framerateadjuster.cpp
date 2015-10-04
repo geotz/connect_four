@@ -51,10 +51,19 @@ void FrameRateAdjuster::operator()()
         auto dur = std::chrono::duration_cast<ns_t>(now - _t0);
         _t0 = now;
         double real_fps = _count / std::chrono::duration_cast<std::chrono::duration<double>>(dur).count();
-        if (real_fps > _fps * ( 1.0 + _rwin) || real_fps < _fps * ( 1.0 - _rwin))
+        const double ratio = real_fps / _fps;
+        if (ratio > 1.0 + _rwin || ratio < 1.0 - _rwin)
         { // too fast or too slow
-            _sleep = ns_t(static_cast<long long>(_sleep.count() * real_fps / _fps));
+            _sleep = ns_t(static_cast<long long>(_sleep.count() * ratio));
 //            std::cerr << "\nadjusted sleep = " << _sleep.count() << " ns" << std::endl;
+        } else {
+            // finetuning -- quadratic
+            if (ratio > 1.0) {
+                _sleep = ns_t(static_cast<long long>(_sleep.count() * (1.0 + (ratio - 1.0)*(ratio - 1.0))));
+            } else if (ratio < 1.0) {
+                _sleep = ns_t(static_cast<long long>(_sleep.count() * (1.0 - (1.0 - ratio)*(1.0 - ratio))));
+            }
+//            std::cerr << "\nfinetuned sleep = " << _sleep.count() << " ns" << std::endl;
         }
         _count = 0;
         std::cerr << real_fps << "fps                       \r";

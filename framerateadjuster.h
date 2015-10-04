@@ -26,7 +26,7 @@
 
 class FrameRateAdjuster
 {
-    static constexpr int UNIT { 1000000000 };
+    static constexpr int UNIT { 1000000000 }; // 1 second
     static constexpr int DEF_FPS { 50 };
     static constexpr double DEF_REL_WIN { 0.05 };
 public:
