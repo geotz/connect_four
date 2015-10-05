@@ -6,7 +6,7 @@ LDLIBS=-lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system
 
 all: connect_four
 
-connect_four: connect_four.cpp framerateadjuster.o game.o gameview.o audio.o
+connect_four: connect_four.cpp frameratecontroller.o game.o gameview.o audio.o
 
 clean:
 	rm -f connect_four *.o

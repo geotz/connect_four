@@ -114,11 +114,6 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
     updateGeometry();
 }
 
-void GameView::setString(sf::Text& tx, const std::string &s)
-{
-    if (tx.getString() != s) tx.setString(s);
-}
-
 void GameView::updateGeometry()
 {
     sf::Vector2f size(win->getSize());
@@ -186,8 +181,8 @@ void GameView::update(Game *g)
     static const std::string DRAW = "DRAW";
     State s = g->state();
     for (int i = 0; i < 2; i++) {
-        setString(txPType[i], g->is_demo(i) ? player[i].scomp : player[i].shuman);
-        setString(txPAlg[i], g->think_algo & (1<<(i^1)) ? MC: AB);
+        txPType[i].setString(g->is_demo(i) ? player[i].scomp : player[i].shuman);
+        txPAlg[i].setString(g->think_algo & (1<<(i^1)) ? MC: AB);
     }
     for (int i = 0; i < 7; i++) {
         for (int j = 0; j < 6; j++) {
@@ -209,8 +204,8 @@ void GameView::update(Game *g)
     if (s.is_terminal()) {
         int p = s.last_player();
         int w = s.winner_info();
-        if (w == 2) setString(txInfo, DRAW);
-        else setString(txInfo, player[p].swin);
+        if (w == 2) txInfo.setString(DRAW);
+        else txInfo.setString(player[p].swin);
         if ((w & 3) < 2) txInfo.setColor(player[p].color);
         else txInfo.setColor(sf::Color::White);
         if ((w & 3) < 2) {
@@ -229,11 +224,11 @@ void GameView::update(Game *g)
 		}
 	} else {
         int p = s.next_player();
-        if (g->is_demo(p)) setString(txInfo,player[p].sthink);
-        else setString(txInfo, player[p].splay);
+        if (g->is_demo(p)) txInfo.setString(player[p].sthink);
+        else txInfo.setString(player[p].splay);
 		txInfo.setColor(player[p].hicolor);
     }
-    setString(txMsg, g->get_msg());
+    txMsg.setString(g->get_msg());
 }
     
 void GameView::render() const 

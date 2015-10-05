@@ -68,7 +68,7 @@ private:
 	};
 	sf::RenderWindow *win;
     sf::RectangleShape rect;
-    std::vector<std::vector<sf::CircleShape> > column;
+    std::vector<std::vector<sf::CircleShape>> column;
     Player player[2];
     sf::Font font;
     sf::Font font2;

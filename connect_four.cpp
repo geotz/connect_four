@@ -38,7 +38,7 @@
 #include "gameview.h"
 #include "audio.h"
 #include "game.h"
-#include "framerateadjuster.h"
+#include "frameratecontroller.h"
 
 int main(int argc, char **argv)
 {
@@ -46,15 +46,33 @@ int main(int argc, char **argv)
 //    for (unsigned i=0; i<VModes.size(); i++) {
 //        std::cout <<  VModes[i].width << 'x' << VModes[i].height << ' '  << VModes[i].bitsPerPixel << std::endl;
 //    }
-    bool wnd = argc > 1 && std::strcmp(argv[1], "--windowed") == 0;
+    bool wnd = false;
+    int frame_rate = 15;
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::strcmp(argv[i], "--nofs") == 0)
+        {
+            wnd = true;
+        } else if (std::strncmp(argv[i], "--fps=", 6) == 0) {
+            frame_rate = std::atoi(&argv[i][6]);
+            if (!frame_rate) {
+                std::cerr << "invalid frame rate, using default" << std::endl;
+                frame_rate = 15;
+            }
+        } else {
+            std::cerr << "ignoring unknown argument " << argv[i] << std::endl;
+        }
+    }
     GameView gv(!wnd);
 	AudioInterface aud;
     Game game(&gv, &aud);
 
     std::srand(std::time(NULL));
+
     sf::RenderWindow *win = gv.getWindow();
-    FrameRateAdjuster fps{15};
+    FrameRateController fps{frame_rate};
 //    win->setFramerateLimit(0);
+
     while (win->isOpen())
     {
         sf::Event event;

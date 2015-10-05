@@ -20,7 +20,7 @@
 
 // Monte-Carlo Tree Search
 
-#include<iostream>
+//#include<iostream>
 #include<algorithm>
 #include<vector>
 #include<iterator>
@@ -74,7 +74,8 @@ State mcts_analyze(State s, int num_samples, bool second_player = false, typenam
         mit = std::max_element(vp.begin(),vp.end());
         if (score) *score = *mit;
 //        std::cerr << "score = " << *mit << std::endl;
-    } else
+    }
+    else
     {
         mit = std::min_element(vp.begin(),vp.end());
         if (score) *score = -(*mit);
