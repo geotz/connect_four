@@ -26,7 +26,7 @@
 #include<limits>
 
 FrameRateController::FrameRateController(int fps, double rel_win):
-    _real_fps{std::numeric_limits<double>::signaling_NaN()}, _rwin(rel_win), _sleep{2e-9}, _count{0}
+    _real_fps{std::numeric_limits<double>::quiet_NaN()}, _rwin(rel_win), _sleep{2e-9}, _count{0}
 {
     set_fps(fps);
 }
