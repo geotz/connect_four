@@ -21,9 +21,8 @@
 
 /*
  *  TODO:
- *      choose algorithm for AI
  *      track depth along with history (so that takeback does not leave big depth)
- *      setString ... change only on different string (now done manually not everywhere)
+ *      toggle sound from cmdline
  */
 
 #include<vector>
