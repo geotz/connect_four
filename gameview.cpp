@@ -22,6 +22,8 @@
 #include "gameview.h"
 #include "game.h"
 #include<cmath>
+#include<cstdio>
+//#include<sstream>
 
 GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
 {
@@ -99,6 +101,12 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
     txMsg.setCharacterSize(15);
     txMsg.setColor(sf::Color::Cyan);
     txMsg.setStyle(sf::Text::Regular);
+
+    txFPS.setFont(font2);
+    txFPS.setCharacterSize(8);
+    txFPS.setColor(sf::Color::White);
+    txFPS.setStyle(sf::Text::Regular);
+    txFPS.setPosition(0,0);
 
     for (int i = 0; i < 7; i++) {
         txColNum[i].setFont(font);
@@ -251,6 +259,7 @@ void GameView::render() const
     win->draw(txMsg);
     win->draw(txPAlg[0]);
     win->draw(txPAlg[1]);
+    win->draw(txFPS);
     win->display();
 }
 
@@ -292,4 +301,16 @@ void GameView::mark_pos(int row, int col, int pl)
 	t.setOutlineThickness(3);
 	t.setOutlineColor(sf::Color::White);
 	t.setFillColor(player[pl].locolor);
+}
+
+void GameView::set_fps_string(double fps)
+{
+    char buf[128];
+    buf[sizeof(buf)-1] = 0;
+    snprintf(buf, sizeof(buf)-1, "%5.2f", fps);
+    txFPS.setString( buf );
+    // which one is faster? :)
+//    std::ostringstream os;
+//    os << fps;
+//    txFPS.setString( os.str() );
 }

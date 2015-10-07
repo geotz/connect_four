@@ -152,7 +152,8 @@ int main(int argc, char **argv)
                     break;
             }
         }
-        
+
+        gv.set_fps_string( fps.real_fps() );
         game.render();
         fps();
         if (game.is_demo(game.state().next_player())) game.ac_play();

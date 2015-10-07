@@ -57,6 +57,7 @@ public:
     sf::RenderWindow *getWindow() const { return win; }
 
     sf::Vector2i getGrid(sf::Vector2f pos);
+    void set_fps_string( double fps );
 
 private:
 	struct Player {
@@ -78,6 +79,7 @@ private:
     sf::Text txColNum[7];
     sf::Text txHelp;
     sf::Text txPType[2], txVs;
+    sf::Text txFPS;
     sf::Texture backgroundTexture;
     sf::Sprite background; // (gpu) memory consumption??
     bool _fullscreen;

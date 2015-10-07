@@ -21,11 +21,12 @@
 
 #include "frameratecontroller.h"
 
-#include<iostream>
+//#include<iostream>
 #include<thread>
+#include<limits>
 
 FrameRateController::FrameRateController(int fps, double rel_win):
-    _rwin(rel_win), _sleep{2e-9}, _count{0}
+    _real_fps{std::numeric_limits<double>::signaling_NaN()}, _rwin(rel_win), _sleep{2e-9}, _count{0}
 {
     set_fps(fps);
 }
@@ -50,7 +51,7 @@ void FrameRateController::operator()()
         const auto now = std::chrono::steady_clock::now();
         const auto dur = std::chrono::duration_cast<dur_t>(now - _t0);
         _t0 = now;
-        const double real_fps = _fps / dur.count();
+        _real_fps = _fps / dur.count();
         const double ratio = 1.0 / dur.count();
         if (ratio > 1.0 + _rwin || ratio < 1.0 - _rwin)
         { // too fast or too slow
@@ -66,6 +67,6 @@ void FrameRateController::operator()()
 //            std::cerr << "\nfinetuned sleep = " << _sleep.count() << " ns" << std::endl;
         }
         _count = 0;
-        std::cerr << real_fps << "fps                       \r";
+//        std::cerr << _real_fps << "fps                       \r";
     }
 }

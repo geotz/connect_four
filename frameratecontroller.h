@@ -32,6 +32,7 @@ class FrameRateController
 public:
     FrameRateController(int fps = DEF_FPS, double rwin = DEF_REL_WIN);
 
+    double real_fps() const { return _real_fps; }
     int fps() const { return _fps; }
     double rwin() const { return _rwin; }
 
@@ -44,6 +45,7 @@ private:
     typedef std::chrono::steady_clock steady_clock;
     typedef std::chrono::duration<double> dur_t;
 
+    double _real_fps;
     double _rwin;
     steady_clock::time_point _t0;
     int _fps;
