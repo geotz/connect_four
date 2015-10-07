@@ -25,11 +25,8 @@
 //class AlphaBetaDebug;
 
 template<class State>
-typename State::score_type alpha_beta(State s,
-                typename State::score_type alpha,
-                typename State::score_type beta,
-                bool max, bool second_player,
-                int max_depth, int cur_depth = 0, State *best = 0, int *moves = 0) 
+typename State::score_type alpha_beta(  State s, typename State::score_type alpha, typename State::score_type beta,
+                                        bool max, bool second_player, int max_depth, int cur_depth = 0, State *best = 0, int *moves = 0)
 {
 //    AlphaBetaDebug foo(max,cur_depth);
     if (cur_depth == max_depth || s.is_terminal())

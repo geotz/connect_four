@@ -26,7 +26,7 @@
 #include"mcts.h"
 
 Game::Game(ViewBase* view, AudioBase* audio):
-    view(view), audio(audio), msg(" "), think_algo(2)
+    view(view), audio(audio), msg(" "), think_algo(1)
 {
     ac_restart();
 }
@@ -85,13 +85,7 @@ bool Game::ac_play(int where)
     if (demo[s.next_player()]) { // computer play
         State q;
         if (s == State()) q = s.make_move(3, s.next_player()); // center heuristic
-        else {
-            if (s.next_player()) { // Yellow
-                q = (think_algo & 1) ? mcts_think() : alphabeta_think();
-            } else {               // Red
-                q = (think_algo & 2) ? mcts_think() : alphabeta_think();
-            }
-        }
+        else q = (think_algo & (1 << s.next_player())) ? mcts_think() : alphabeta_think();
         audio->play(s.column_height(q.last_column())+1);
         history[move++] = q;
         max_move = move;

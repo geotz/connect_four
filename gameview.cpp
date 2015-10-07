@@ -176,13 +176,12 @@ sf::Vector2i GameView::getGrid(sf::Vector2f pos)
 
 void GameView::update(Game *g)
 {
-    static const std::string AB = "Alpha-Beta";
-    static const std::string MC = "Monte-Carlo";
+    static const std::string ALG[2] = { {"Alpha-Beta"}, {"Monte-Carlo"} };
     static const std::string DRAW = "DRAW";
     State s = g->state();
     for (int i = 0; i < 2; i++) {
         txPType[i].setString(g->is_demo(i) ? player[i].scomp : player[i].shuman);
-        txPAlg[i].setString(g->think_algo & (1<<(i^1)) ? MC: AB);
+        txPAlg[i].setString(ALG[(g->think_algo & (1<<i)) != 0]);
     }
     for (int i = 0; i < 7; i++) {
         for (int j = 0; j < 6; j++) {

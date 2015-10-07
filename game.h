@@ -38,7 +38,7 @@ class Game {
     int depth;
     std::string msg; // algorithm stats
 public:
-    int think_algo; // 0..3, bit 1-X player X, 0=AB 1=MC
+    int think_algo; // 0..3, bit 1: player X, bit 0: 0=AB 1=MC
 
     Game(ViewBase* view, AudioBase* audio);
 
