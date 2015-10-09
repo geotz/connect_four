@@ -184,7 +184,7 @@ sf::Vector2i GameView::getGrid(sf::Vector2f pos)
 
 void GameView::update(Game *g)
 {
-    static const std::string ALG[2] = { {"Alpha-Beta"}, {"Monte-Carlo"} };
+    static const std::string ALG[2] = { {"Alpha-Beta (Hard)"}, {"Monte-Carlo (Easy)"} };
     static const std::string DRAW = "DRAW";
     State s = g->state();
     for (int i = 0; i < 2; i++) {
