@@ -107,6 +107,21 @@ public:
         return make_move(ci[rand() % nc], next_player());
     }
     
+    State symmetric() const {
+        // TODO: possibly speedup with bit magic...
+//        State ret(*this); // "saves" column[3]?
+        State ret;
+        ret.column[0] = column[6];
+        ret.column[1] = column[5];
+        ret.column[2] = column[4];
+        ret.column[3] = column[3];
+        ret.column[4] = column[2];
+        ret.column[5] = column[1];
+        ret.column[6] = column[0];
+        ret.column[7] = (last_player() << 3) | (6 - last_column());
+        return ret;
+    }
+    
     int last_player() const { return column[7] >> 3; }
     
     int next_player() const { return !last_player(); }
@@ -167,12 +182,12 @@ public:
     int last_column() const { return column[7] & 0x07; }
     
     bool operator==(const State &other) const {
-        return rep == other.rep;
+        return hash_value() == other.hash_value(); // perfect hash
     }
     bool operator<(const State &other) const {
-        return rep < other.rep;
+        return hash_value() < other.hash_value();
     }
-    long long hash_value() const { return rep; }
+    long long hash_value() const { return rep & BOARD_MASK; } // perfect hash
     
     int empty_space() const {
         return 42 - column_height(0) - column_height(1) - column_height(2) -
@@ -200,7 +215,7 @@ public:
     }
     
 private:
-    
+    static const long long BOARD_MASK = 0x00FFFFFFFFFFFFFF;
     void drop(int col, int who) {
         int h = column_height(col);
         if (h >= 6) return;

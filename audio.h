@@ -33,6 +33,7 @@ struct AudioBase {
     virtual void setEnabled(bool) = 0;
     virtual bool is_enabled() const = 0;
     virtual void toggle() = 0;
+    virtual std::string resourcePath() { return "./res/"; }
 };
 
 struct DummyAudioInterface: public AudioBase {

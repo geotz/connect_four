@@ -37,6 +37,7 @@ struct ViewBase {
     virtual bool is_fullscreen() const = 0;
     virtual void setFullscreen(bool enabled) = 0;
     void toggleFullscreen() { setFullscreen(!is_fullscreen()); }
+    virtual std::string resourcePath() { return "./res/"; }
 };
 
 struct DummyView: public ViewBase {

@@ -21,22 +21,23 @@
 
 #include "audio.h"
 #include <iostream>
+//#include "ResourcePath.hpp"
 
 AudioInterface::AudioInterface()
 {
     _enabled = true;
-	load(RESTART, "res/restart.ogg");
-	load(DROP1, "res/drop1.wav");
-	load(DROP2, "res/drop2.wav");
-	load(DROP3, "res/drop3.wav");
-	load(DROP4, "res/drop4.wav");
-	load(DROP5, "res/drop5.wav");
-	load(DROP6, "res/drop6.wav");
-	load(ERROR, "res/err.wav");
-	load(INFO, "res/info.wav");
-	load(WARNING, "res/warn.ogg");
-	load(LOSER, "res/loser.ogg");
-	load(WINNER, "res/winner.ogg");
+	load(RESTART, resourcePath() + "restart.ogg");
+	load(DROP1, resourcePath() + "drop1.wav");
+	load(DROP2, resourcePath() + "drop2.wav");
+	load(DROP3, resourcePath() + "drop3.wav");
+	load(DROP4, resourcePath() + "drop4.wav");
+	load(DROP5, resourcePath() + "drop5.wav");
+	load(DROP6, resourcePath() + "drop6.wav");
+	load(ERROR, resourcePath() + "err.wav");
+	load(INFO, resourcePath() + "info.wav");
+	load(WARNING, resourcePath() + "warn.ogg");
+	load(LOSER, resourcePath() + "loser.ogg");
+	load(WINNER, resourcePath() + "winner.ogg");
 	for (int i = 0; i < NUM_EFFECTS; ++i) 
 		effect[i].setBuffer(buffer[i]);
 }

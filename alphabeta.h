@@ -20,19 +20,73 @@
 
 // Alpha-Beta Tree Search
 
-//#include<iostream>
+#include<iostream>
+
+#include<unordered_map>
+#include<utility>
 
 //class AlphaBetaDebug;
 
 template<class State>
-typename State::score_type alpha_beta(  State s, typename State::score_type alpha, typename State::score_type beta,
+struct NoPolicy
+{
+    using Score = typename State::score_type;
+    void insert(State, Score, int) { }
+    std::pair<Score,bool> lookup(State, int) { return std::make_pair(Score(),false); }
+};
+
+template<class State>
+struct DefaultPolicy
+{
+    using Score = typename State::score_type;
+
+    struct CacheEntry
+    {
+        Score score;
+        int depth;
+    };
+
+    std::pair<Score,bool> lookup(State s, int depth) const {
+        auto it = _cache.find(s);
+        if (it == _cache.end())
+        {
+            State sym = s.symmetric();
+            it = _cache.find(sym);
+            if (it == _cache.end())
+            {
+                return std::make_pair(Score(), false);
+            }
+        }
+//        if ((*it).second.depth != depth) return std::make_pair(Score(), false);
+        if ((*it).second.depth > depth) return std::make_pair(Score(), false);
+        return std::make_pair((*it).second.score, true);
+    }
+
+    void insert(State s, typename State::score_type score, int depth) { _cache[s] = CacheEntry{score, depth}; }
+
+private:
+    struct Hash {
+        auto operator()(State s) const { return s.hash_value(); }
+    };
+
+    std::unordered_map<State,CacheEntry,Hash> _cache;
+};
+
+template<class State, class CachingPolicy>
+typename State::score_type alpha_beta_cache(State s, CachingPolicy &cache, typename State::score_type alpha, typename State::score_type beta,
                                         bool max, bool second_player, int max_depth, int cur_depth = 0, State *best = 0, int *moves = 0)
 {
 //    AlphaBetaDebug foo(max,cur_depth);
+    auto res = cache.lookup(s, cur_depth);
+    if (res.second) {
+//        std::cerr << "cache hit for state! " << s.hash_value() << std::endl;
+        return second_player ? -res.first : res.first;
+    }
     if (cur_depth == max_depth || s.is_terminal())
     {
         //typename State::score_type score = s()*(3.0/(3.0+cur_depth));
         auto score = s();
+        cache.insert(s, score, cur_depth);
         return second_player ? -score : score;
     }
     State sa, sb;
@@ -46,7 +100,7 @@ typename State::score_type alpha_beta(  State s, typename State::score_type alph
 //            if (((*moves) & ((1<<20)-1)) == 0) std::cerr << (*moves) << std::endl;
         }
 //        r.dump(std::cerr);
-        auto val = alpha_beta<State>(r, alpha, beta, !max, second_player,
+        auto val = alpha_beta_cache<State>(r, cache, alpha, beta, !max, second_player,
                                                           max_depth, cur_depth+1, 0, moves);
 //        std::cerr << val << std::endl;
         if (max)
@@ -55,6 +109,7 @@ typename State::score_type alpha_beta(  State s, typename State::score_type alph
             if (beta <= alpha)
             {
                 if (best) *best = sa;
+                cache.insert(r, second_player ? -alpha : alpha, cur_depth);
                 return alpha;
             }
         }
@@ -64,12 +119,23 @@ typename State::score_type alpha_beta(  State s, typename State::score_type alph
             if (beta <= alpha)
             {
                 if (best) *best = sb;
+                cache.insert(r, second_player ? -beta : beta, cur_depth);
                 return beta;
             }
         }
     }
     if (best) *best = max ? sa : sb;
-    return max ? alpha: beta;
+    auto rval = max ? alpha: beta;
+    cache.insert(s, second_player ? -rval : rval, cur_depth);
+    return rval;
+}
+
+template<class State, class CachingPolicy = NoPolicy<State> >
+auto alpha_beta(  State s, typename State::score_type alpha, typename State::score_type beta,
+                                        bool max, bool second_player, int max_depth, int cur_depth = 0, State *best = 0, int *moves = 0 )
+{
+    CachingPolicy tmp;
+    return alpha_beta_cache( s, tmp, alpha, beta, max, second_player, max_depth, cur_depth, best, moves );
 }
 
 /*

@@ -48,11 +48,13 @@ void Game::ac_restart()
 
 State Game::alphabeta_think()
 {
-    static const int MIN_MOVES = 1000000;
+    static const int MIN_MOVES = 2000000;
     int moves = 0;
     State s = state();
     State q;
-    State::score_type val = alpha_beta(s, State::MINUS_INFINITY, State::PLUS_INFINITY, true,
+    using Policy = DefaultPolicy<State>;
+//    using Policy = NoPolicy<State>;
+    State::score_type val = alpha_beta<State,Policy>(s, State::MINUS_INFINITY, State::PLUS_INFINITY, true,
                                        s.next_player(), depth, 0, &q, &moves);
     std::stringstream ss;
     ss << "AB(" << s.next_player() << ")" << std::endl

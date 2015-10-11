@@ -24,6 +24,7 @@
 #include<cmath>
 #include<cstdio>
 //#include<sstream>
+//#include "ResourcePath.hpp"
 
 GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
 {
@@ -35,8 +36,8 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
     }
 //    win->setVerticalSyncEnabled(true);
 
-    font.loadFromFile("res/JLSSpaceGothicR_NC.otf");
-    font2.loadFromFile("res/DroidSansMono.ttf");
+    font.loadFromFile(resourcePath() + "JLSSpaceGothicR_NC.otf");
+    font2.loadFromFile(resourcePath() + "DroidSansMono.ttf");
     player[0] = Player(0);
     player[1] = Player(1);
 
@@ -116,7 +117,7 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
         txColNum[i].setString(std::string(1,'1'+i));
     }
 
-    backgroundTexture.loadFromFile("res/perseus_nasamarshall_3929624300.jpg");
+    backgroundTexture.loadFromFile(resourcePath()  + "perseus_nasamarshall_3929624300.jpg");
     background.setTexture(backgroundTexture);
 
     updateGeometry();
