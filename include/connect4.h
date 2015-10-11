@@ -32,7 +32,7 @@ inline int fls(int k) {
 	if (k == 0) return 0;
 	return (sizeof(k) << 3) - __builtin_clz(k);
 	//int c = 0;
-	//while (k) k >>= 1, c++;
+    //while (k) k >>= 1, ++c;
 	//return c;
 }
 #endif
@@ -59,7 +59,7 @@ public:
         iterator(const State &s): i(0), ref(&s) {
             for (int i = 0; i < 7; ++i) sh[i] = i;
             std::random_shuffle(sh,sh+7); // randomize branches
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 7; ++i) {
                 if (ref->column_height(sh[i]) == 6) continue;
                 State s = ref->make_move(sh[i], ref->next_player());
                 if (s.is_terminal()) {
@@ -98,9 +98,9 @@ public:
     State random_move() const {
         char ci[7];
         int nc = 0;
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 7; ++i)
             if (column_height(i) < 6) ci[nc++] = i;
-        for (int i = 0; i < nc; i++) {
+        for (int i = 0; i < nc; ++i) {
             State s = make_move(i, next_player());
             if (s.is_terminal()) return s; // immediate threat!
         }
@@ -128,12 +128,12 @@ public:
     
     void dump(std::ostream& s) {
         for (int i = 5; i >= 0; i--) {
-            for (int j = 0; j < 7; j++)
+            for (int j = 0; j < 7; ++j)
                 s << symbol(get(i,j)) << "  ";
             s << std::endl;
         }
         s << "0  1  2  3  4  5  6" << std::endl;
-//        for (int i = 0; i < 7; i++)
+//        for (int i = 0; i < 7; ++i)
 //            s << column_height(i) << " ";
         s << " last = " << last_column() << " winner = " << winner() << std::endl;
     }
@@ -148,16 +148,16 @@ public:
     int winner_info() const {
         int k;
         
-        for (int i = 0; i < 6; i++) for (int j = 0; j < 4; j++)
+        for (int i = 0; i < 6; ++i) for (int j = 0; j < 4; ++j)
             if ((k = is_line(i,j)) >= 0) return (j<<5) | (i<<2) | k;
         
-        for (int j = 0; j < 7; j++) for (int i = 0; i < column_height(j)-3; i++)
+        for (int j = 0; j < 7; ++j) for (int i = 0; i < column_height(j)-3; ++i)
             if ((k = is_column(j,i)) >= 0) return 0x100 | (j<<5) | (i<<2) | k;
         
-        for (int i = 0; i < 3; i++) for (int j = 0; j < 4; j++)
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 4; ++j)
             if ((k = is_diag_ur(i,j)) >= 0) return 0x200 | (j<<5) | (i<<2) | k;
         
-        for (int i = 0; i < 3; i++) for (int j = 3; j < 7; j++)
+        for (int i = 0; i < 3; ++i) for (int j = 3; j < 7; ++j)
             if ((k = is_diag_ul(i,j)) >= 0) return 0x300 | (j<<5) | (i<<2) | k;
         
         if (is_full()) return 2;
@@ -273,13 +273,13 @@ private:
     // evaluates for player 0 -- negate manually
     int heuristic_value() const {
         int val = 0;
-        for (int i = 0; i < 6; i++) for (int j = 0; j < 4; j++) // horiz
+        for (int i = 0; i < 6; ++i) for (int j = 0; j < 4; ++j) // horiz
             val += line_heuristic(i,j,0,1);
-        for (int j = 0; j < 7; j++) for (int i = 0; i < column_height(j)-3; i++) // vert
+        for (int j = 0; j < 7; ++j) for (int i = 0; i < column_height(j)-3; ++i) // vert
             val += line_heuristic(i,j,1,0);
-        for (int i = 0; i < 3; i++) for (int j = 0; j < 4; j++) // diag UR
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 4; ++j) // diag UR
             val += line_heuristic(i,j,1,1);
-        for (int i = 0; i < 3; i++) for (int j = 3; j < 7; j++) // diag UL
+        for (int i = 0; i < 3; ++i) for (int j = 3; j < 7; ++j) // diag UL
             val += line_heuristic(i,j,1,-1);
         return val;
     }

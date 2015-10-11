@@ -42,7 +42,7 @@
 int main(int argc, char **argv)
 {
 //    std::vector<sf::VideoMode> VModes = sf::VideoMode::getFullscreenModes();
-//    for (unsigned i=0; i<VModes.size(); i++) {
+//    for (unsigned i=0; i<VModes.size(); ++i) {
 //        std::cout <<  VModes[i].width << 'x' << VModes[i].height << ' '  << VModes[i].bitsPerPixel << std::endl;
 //    }
     bool wnd = false;

@@ -45,9 +45,9 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
     rect.setOutlineColor(sf::Color::Cyan);
     rect.setOutlineThickness(5);
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 7; ++i) {
         column[i].reserve(6);
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < 6; ++j) {
             column[i].push_back(sf::CircleShape());
         }
     }
@@ -109,7 +109,7 @@ GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
     txFPS.setStyle(sf::Text::Regular);
     txFPS.setPosition(0,0);
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 7; ++i) {
         txColNum[i].setFont(font);
         txColNum[i].setCharacterSize(24);
         txColNum[i].setStyle(sf::Text::Regular);
@@ -135,8 +135,8 @@ void GameView::updateGeometry()
     //        column.reserve(7);
     float rad = 0.4*dy;
     sf::Vector2f prect = rect.getPosition();
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i < 7; ++i) {
+        for (int j = 0; j < 6; ++j) {
             sf::CircleShape &t = column[i][j];
             t.setRadius(rad);
             t.setPosition(prect.x+i*dy+(dy-2*rad)/2,prect.y+(5-j)*dy+(dy-2*rad)/2);
@@ -156,7 +156,7 @@ void GameView::updateGeometry()
 //    updateState(State(),demo);
 
     float dx = (column[1][0].getPosition().x-column[0][0].getPosition().x)/2;
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 7; ++i) {
         sf::Vector2f v = column[i][0].getPosition();
         txColNum[i].setPosition(v.x+dx-12,size.y+45);
     }
@@ -172,8 +172,8 @@ sf::Vector2i GameView::getGrid(sf::Vector2f pos)
     int row = -1, col = -1;
     float dx = (column[1][0].getPosition().x-column[0][0].getPosition().x)/2;
     float rad = column[0][0].getRadius();
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i < 7; ++i) {
+        for (int j = 0; j < 6; ++j) {
             sf::Vector2f p = column[i][j].getPosition();
             sf::Vector2f center(p.x+dx,p.y+dx);
             float d = std::sqrt(std::pow(pos.x-center.x,2)+std::pow(pos.y-center.y,2));
@@ -188,12 +188,12 @@ void GameView::update(Game *g)
     static const std::string ALG[2] = { {"Alpha-Beta (Hard)"}, {"Monte-Carlo (Easy)"} };
     static const std::string DRAW = "DRAW";
     State s = g->state();
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; ++i) {
         txPType[i].setString(g->is_demo(i) ? player[i].scomp : player[i].shuman);
         txPAlg[i].setString(ALG[(g->think_algo & (1<<i)) != 0]);
     }
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i < 7; ++i) {
+        for (int j = 0; j < 6; ++j) {
 			sf::Color color = sf::Color::Black;
             int c = s.get(j,i);
 			if (c >= 0) color = player[c].color;
@@ -221,13 +221,13 @@ void GameView::update(Game *g)
 			int row = (w >> 2) & 7;
 			int col = (w >> 5) & 7;
 			if (dir == 0) {
-				for (int i = 0; i < 4; i++) mark_pos(row, col+i, p);
+                for (int i = 0; i < 4; ++i) mark_pos(row, col+i, p);
 			} else if (dir == 1) {
-				for (int i = 0; i < 4; i++) mark_pos(row+i, col, p);
+                for (int i = 0; i < 4; ++i) mark_pos(row+i, col, p);
 			} else if (dir == 2) {
-				for (int i = 0; i < 4; i++) mark_pos(row+i, col+i, p);
+                for (int i = 0; i < 4; ++i) mark_pos(row+i, col+i, p);
 			} else if (dir == 3) {
-				for (int i = 0; i < 4; i++) mark_pos(row+i, col-i, p);
+                for (int i = 0; i < 4; ++i) mark_pos(row+i, col-i, p);
 			}
 		}
 	} else {
@@ -245,8 +245,8 @@ void GameView::render() const
     //    win->pushGLStates();
     win->draw(background);
     win->draw(rect);
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 6; j++) {
+    for (int i = 0; i < 7; ++i) {
+        for (int j = 0; j < 6; ++j) {
 			win->draw(column[i][j]);
 		}
 		win->draw(txColNum[i]);
