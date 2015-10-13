@@ -30,7 +30,6 @@
 #include<string>
 #include<cstdlib>
 #include<ctime>
-#include<cstring>
 
 #include <SFML/Graphics.hpp>
 
@@ -38,6 +37,7 @@
 #include "audio.h"
 #include "game.h"
 #include "frameratecontroller.h"
+#include "arguments.h"
 
 int main(int argc, char **argv)
 {
@@ -47,21 +47,15 @@ int main(int argc, char **argv)
 //    }
     bool wnd = false;
     int frame_rate = 15;
-    for (int i = 1; i < argc; ++i)
-    {
-        if (std::strcmp(argv[i], "--nofs") == 0)
-        {
-            wnd = true;
-        } else if (std::strncmp(argv[i], "--fps=", 6) == 0) {
-            frame_rate = std::atoi(&argv[i][6]);
-            if (!frame_rate) {
-                std::cerr << "invalid frame rate, using default" << std::endl;
-                frame_rate = 15;
-            }
-        } else {
-            std::cerr << "ignoring unknown argument " << argv[i] << std::endl;
-        }
-    }
+
+    bool a_demo = false;
+    bool status = parse_argv(argc, argv,
+                             Arg<bool>("--nofs", wnd, true),
+                             Arg<int>("--fps", frame_rate, 15, true),
+                             Arg<bool>("--demo", a_demo, true)
+                             );
+    if (!status) return 1;
+
     GameView gv(!wnd);
 	AudioInterface aud;
     Game game(&gv, &aud);
@@ -72,6 +66,7 @@ int main(int argc, char **argv)
     FrameRateController fps{frame_rate};
 //    win->setFramerateLimit(0);
 
+    if (a_demo) game.ac_demo();
     while (win->isOpen())
     {
         sf::Event event;

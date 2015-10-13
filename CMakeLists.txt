@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.3)
 
 include_directories(./include)
 
-set(SOURCES include/alphabeta.h include/audio.h include/connect4.h include/frameratecontroller.h include/game.h include/gameview.h include/mcts.h
+set(SOURCES include/alphabeta.h include/audio.h include/connect4.h include/frameratecontroller.h include/game.h
+include/gameview.h include/mcts.h include/arguments.h
 src/audio.cpp src/frameratecontroller.cpp src/game.cpp src/gameview.cpp src/main.cpp)
 
 add_definitions(-std=c++14)
