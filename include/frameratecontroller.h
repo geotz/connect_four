@@ -19,7 +19,7 @@
 
 // frame rate controller (interface)
 
-#include<chrono>
+#include <chrono>
 
 #ifndef _FRAMERATECONTROLLER_H_
 #define _FRAMERATECONTROLLER_H_

@@ -22,9 +22,9 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
-#include<string>
+#include <string>
 
-#include "connect4.h"
+#include "connect4.hpp"
 #include "gameview.h"
 #include "audio.h"
 

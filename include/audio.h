@@ -22,39 +22,56 @@
 #ifndef _AUDIO_H_
 #define _AUDIO_H_
 
-#include <SFML/Audio.hpp>
-#include <string>
+#include <memory>
 
-struct AudioBase {
-	enum { RESTART = 0, DROP1, DROP2, DROP3, DROP4, DROP5, DROP6, 
-		   ERROR, INFO, WARNING, LOSER, WINNER, NUM_EFFECTS };
-    virtual ~AudioBase() { }
-    virtual void play(int) = 0;
-    virtual void setEnabled(bool) = 0;
-    virtual bool is_enabled() const = 0;
-    virtual void toggle() = 0;
-    virtual std::string resourcePath() { return "./res/"; }
+struct AudioBase
+{
+    enum e_sample {
+        RESTART = 0,
+        DROP1, DROP2, DROP3, DROP4, DROP5, DROP6,
+        ERROR, INFO, WARNING, LOSER, WINNER,
+        NUM_EFFECTS
+    };
+
+    AudioBase()                         = default;
+
+    AudioBase( const AudioBase& )       = delete;
+    AudioBase& operator=( const AudioBase& ) = delete;
+    AudioBase( AudioBase&& )            = delete;
+    AudioBase& operator=( AudioBase&& ) = delete;
+
+    virtual ~AudioBase();
+
+    virtual void play(e_sample)         = 0;
+    virtual void setEnabled(bool)       = 0;
+    virtual bool isEnabled() const      = 0;
+    virtual void toggle()               = 0;
 };
 
-struct DummyAudioInterface: public AudioBase {
-    void play(int) { }
-    void setEnabled(bool) { }
-    bool is_enabled() const { return false; }
-    void toggle() { }
+struct DummyAudioInterface: public AudioBase
+{
+    ~DummyAudioInterface();
+    void play(e_sample);
+    void setEnabled(bool);
+    bool isEnabled() const;
+    void toggle();
 };
 
-class AudioInterface: public AudioBase {
-	sf::SoundBuffer buffer[NUM_EFFECTS];
-	sf::Sound effect[NUM_EFFECTS];
-    bool _enabled;
+class AudioInterface: public AudioBase
+{
 public:
 	AudioInterface();
-    void play(int n) { if (_enabled) effect[n].play(); }
-    void setEnabled(bool enabled) { _enabled = enabled; }
-    bool is_enabled() const { return _enabled; }
-    void toggle() { _enabled = !_enabled; }
+    ~AudioInterface();
+
+    void play(e_sample);
+    void setEnabled(bool enabled);
+    bool isEnabled() const;
+    void toggle();
+
 private:
-	void load(int pos, const std::string& filename);
+
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif

@@ -20,10 +20,10 @@
 
 // Alpha-Beta Tree Search
 
-#include<iostream>
+#include <iostream>
 
-#include<unordered_map>
-#include<utility>
+#include <unordered_map>
+#include <utility>
 
 //class AlphaBetaDebug;
 
@@ -65,11 +65,7 @@ struct DefaultPolicy
     void insert(State s, typename State::score_type score, int depth) { _cache[s] = CacheEntry{score, depth}; }
 
 private:
-    struct Hash {
-        auto operator()(State s) const { return s.hash_value(); }
-    };
-
-    std::unordered_map<State,CacheEntry,Hash> _cache;
+    std::unordered_map<State,CacheEntry,typename State::Hasher> _cache;
 };
 
 template<class State, class CachingPolicy>

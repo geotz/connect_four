@@ -25,19 +25,28 @@
  *      toggle sound from cmdline
  */
 
-#include<vector>
-#include<iostream>
-#include<string>
-#include<cstdlib>
-#include<ctime>
-
-#include <SFML/Graphics.hpp>
-
 #include "gameview.h"
 #include "audio.h"
 #include "game.h"
 #include "frameratecontroller.h"
-#include "arguments.h"
+#include "arguments.hpp"
+
+#include <vector>
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+
+#include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+
+struct Options
+{
+    bool windowed = false;
+    int frame_rate = 15;
+    bool demo = false;
+};
 
 int main(int argc, char **argv)
 {
@@ -45,28 +54,27 @@ int main(int argc, char **argv)
 //    for (unsigned i=0; i<VModes.size(); ++i) {
 //        std::cout <<  VModes[i].width << 'x' << VModes[i].height << ' '  << VModes[i].bitsPerPixel << std::endl;
 //    }
-    bool wnd = false;
-    int frame_rate = 15;
 
-    bool a_demo = false;
+
+    Options opt;
     bool status = parse_argv(argc, argv,
-                             Arg<bool>("--nofs", wnd, true),
-                             Arg<int>("--fps", frame_rate, 15, true),
-                             Arg<bool>("--demo", a_demo, true)
+                             Arg<bool>("--nofs", opt.windowed, true),
+                             Arg<int>("--fps", opt.frame_rate, 15, true),
+                             Arg<bool>("--demo", opt.demo, true)
                              );
     if (!status) return 1;
 
-    GameView gv(!wnd);
+    GameView gv(!opt.windowed);
 	AudioInterface aud;
     Game game(&gv, &aud);
 
     std::srand(std::time(NULL));
 
-    sf::RenderWindow *win = gv.getWindow();
-    FrameRateController fps{frame_rate};
+    auto win = gv.getWindow();
+    FrameRateController fps{opt.frame_rate};
 //    win->setFramerateLimit(0);
 
-    if (a_demo) game.ac_demo();
+    if (opt.demo) game.ac_demo();
     while (win->isOpen())
     {
         sf::Event event;
@@ -137,9 +145,9 @@ int main(int argc, char **argv)
                 {
                     sf::Vector2f v = win->mapPixelToCoords(sf::Vector2i(event.mouseButton.x,event.mouseButton.y));
                     //std::cerr << "x = " << v.x << " y = " << v.y << std::endl;
-                    sf::Vector2i grid = gv.getGrid(v);
-                    //std::cerr << "row = " << grid.y << " col = " << grid.x << std::endl;
-                    game.ac_play(grid.y, grid.x);
+                    auto [x,y] = gv.getGrid(v.x, v.y);
+                    //std::cerr << "row = " << y << " col = " << x << std::endl;
+                    game.ac_play(y, x);
                 }
                     break;
                 default:
@@ -147,7 +155,7 @@ int main(int argc, char **argv)
             }
         }
 
-        gv.set_fps_string( fps.real_fps() );
+        gv.setFpsString( fps.real_fps() );
         game.render();
         fps();
         if (game.is_demo(game.state().next_player())) game.ac_play();

@@ -22,17 +22,25 @@
 #ifndef _ARGUMENTS_H_
 #define _ARGUMENTS_H_
 
-#include<iostream>
-#include<cstring>
-#include<sstream>
-#include<ctype.h>
+#include <iostream>
+#include <cstring>
+#include <sstream>
+#include <ctype.h>
+#include <string_view>
+#include <stdexcept>
 
 template<class T>
-struct Arg {
-    Arg(const std::string& aName, T& aVal, T aDefVal = T(), bool aMandatory = false):
-           name(aName), val(aVal), def_val(aDefVal), mandatory(aMandatory) { }
-    bool operator()(const char *data) const {
-        if (*data == 0)
+struct Arg
+{
+    Arg(std::string name_, T& val_, T def_val_ = T(), bool mandatory_ = false):
+           name(std::move(name_)), val(val_), def_val(def_val_), mandatory(mandatory_)
+    {
+        if ( name.empty()) throw std::range_error("argument name should be nonempty");
+    }
+
+    bool operator()(std::string_view value_str) const
+    {
+        if (value_str.empty())
         {
             if (!mandatory)
             {
@@ -43,17 +51,19 @@ struct Arg {
             std::cerr << "error: option " << name << " missing mandatory value" << std::endl;
             return false;
         }
-        if ( *data != '=')
+        if ( *value_str.begin() != '=')
         {
-            std::cerr << "error: option " << name << " should be followed by '=' in order to specify value" << std::endl;
+            std::cerr << "error: option " << name
+                      << " should be followed by '=' in order to specify value" << std::endl;
             return false;
         }
-        std::istringstream is(data+1);
+        std::istringstream is(&value_str[1]);
         is >> val;
 //        std::cerr << "parsed option " << name << " data |" << (data+1) << "| as " << val << std::endl;
         if (!is)
         {
-            std::cerr << "error: could not parse value of " << (mandatory ? "mandatory " : "") << "option " << name;
+            std::cerr << "error: could not parse value of "
+                      << (mandatory ? "mandatory " : "") << "option " << name;
             if (!mandatory) std::cerr << ", assuming default = " << def_val;
             std::cerr << std::endl;
             val = def_val;
@@ -61,18 +71,18 @@ struct Arg {
         }
         return true;
     }
-    const std::string name;
+
+    std::string name;
     T& val;
     T def_val;
     bool mandatory; // could be templatized
 };
 
-// inlined to avoid multiple definitions
 inline bool parse_argv(int, char **) { return true; }
 
 // TODO: warn about unknown arguments
-template<class A, class... Aargs>
-bool parse_argv(int argc, char **argv, const A& opt, const Aargs&... opts)
+template<class Arg, class... Args>
+bool parse_argv(int argc, char **argv, const Arg& opt, const Args&... opts)
 {
     const auto is_separator = [](const char c) {
         return !(isalnum(c) || c == '_' || c == '-');
@@ -82,13 +92,17 @@ bool parse_argv(int argc, char **argv, const A& opt, const Aargs&... opts)
     for (int i = 1; i < argc; ++i)
     {
 //        std::cerr << "parsing arg " << i << " = " << argv[i] << std::endl;
-        const size_t len = strlen(argv[i]);
-        if (len < opt.name.size()) continue;
-        const bool bw = is_separator(argv[i][opt.name.size()]);
-        const char *data = bw ? argv[i]+opt.name.size() : argv[i]+len;
-        std::string sarg = bw ? std::string(argv[i],opt.name.size()) : argv[i];
-//        std::cerr << "sarg = |" << sarg << "| data = |" << data << "| opt.name = |" << opt.name << "|" << std::endl;
-        if (opt.name == sarg) res = opt(data);
+        const auto arg_str = std::string_view(argv[i], strlen(argv[i]));
+        const auto asz = arg_str.size();
+        const auto osz = opt.name.size();
+        if (asz < osz)
+            continue;
+
+        const bool has_sep = asz > osz && is_separator(arg_str[osz]);
+        const auto value_str = has_sep ? arg_str.substr(osz) : std::string_view();
+        std::string opt_str = has_sep ? std::string(argv[i],opt.name.size()) : argv[i];
+//        std::cerr << "optStr = |" << optStr << "| valueStr = |" << valueStr << "| opt.name = |" << opt.name << "|" << std::endl;
+        if (opt.name == opt_str) res = opt(value_str);
     }
     bool res2 = parse_argv(argc, argv, opts...); // avoid short-circuit
     return res && res2;

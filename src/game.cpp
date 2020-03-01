@@ -22,8 +22,8 @@
 #include<sstream>
 
 #include"game.h"
-#include"alphabeta.h"
-#include"mcts.h"
+#include"alphabeta.hpp"
+#include"mcts.hpp"
 
 Game::Game(ViewBase* view, AudioBase* audio):
     view(view), audio(audio), msg(" "), think_algo(1)
@@ -68,12 +68,27 @@ State Game::alphabeta_think()
 
 State Game::mcts_think()
 {
-    static const int NUM_SAMPLES = 25000;
+    static const int NUM_SAMPLES = 10000;
     State::score_type val;
     State s = state();
-    State q = mcts_analyze(s, NUM_SAMPLES, s.next_player(), &val);
+    auto t0 = std::chrono::steady_clock::now();
+
+    mcts::Tree<State,42> tree(s);
+
+    State q = mcts::naive_analyze<7>(s, NUM_SAMPLES, s.next_player(), &val);
+
+    auto sel = mcts::select<7>( tree );
+    sel.state.dump( std::cerr );
+    auto sel2 = mcts::expand( tree, sel );
+    sel2.dump( std::cerr );
+    std::cerr << tree << '\n';
+    auto sim = mcts::simulate(sel2, 1000);
+    std::cerr << "SIMULATION = " << sim << std::endl;
+
+    auto t1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> dur = t1-t0;
     std::stringstream ss;
-    ss << "MC(" << s.next_player() << ")" << std::endl
+    ss << "MC(" << s.next_player() << ") " << dur.count() << 's' << std::endl
        << "samples = " << NUM_SAMPLES << std::endl << "score = " << val;
     msg = ss.str();
     view->update(this);
@@ -88,7 +103,8 @@ bool Game::ac_play(int where)
         State q;
         if (s == State()) q = s.make_move(3, s.next_player()); // center heuristic
         else q = (think_algo & (1 << s.next_player())) ? mcts_think() : alphabeta_think();
-        audio->play(s.column_height(q.last_column())+1);
+        auto sampleIndex = static_cast<AudioBase::e_sample>(s.column_height(q.last_column())+1);
+        audio->play(sampleIndex);
         history[move++] = q;
         max_move = move;
         if (q.winner() == q.last_player() && !demo[q.next_player()])
@@ -96,7 +112,8 @@ bool Game::ac_play(int where)
         view->update(this);
         return true;
     } else if (s.column_height(where) < 6) { // human play
-        audio->play(s.column_height(where)+1);
+        auto sampleIndex = static_cast<AudioBase::e_sample>(s.column_height(where)+1);
+        audio->play(sampleIndex);
         history[move++] = s.make_move(where, s.next_player());
         max_move = move;
         State q = state();

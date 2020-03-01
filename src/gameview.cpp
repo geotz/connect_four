@@ -21,109 +21,181 @@
 
 #include "gameview.h"
 #include "game.h"
-#include<cmath>
-#include<cstdio>
-//#include<sstream>
-//#include "ResourcePath.hpp"
 
-GameView::GameView(bool fullscreen): column(7), _fullscreen(fullscreen)
+#include <cmath>
+#include <cstdio>
+#include <array>
+#include <string>
+
+// include *.* :P
+#include <SFML/Graphics.hpp>
+
+ViewBase::~ViewBase() = default;
+
+void DummyView::update(Game *g) {}
+void DummyView::render() const {}
+bool DummyView::isFullscreen() const { return false; }
+void DummyView::setFullscreen(bool enabled) {}
+
+struct GameView::Impl
 {
-    if (_fullscreen) {
-        win = new sf::RenderWindow(sf::VideoMode::getFullscreenModes()[0],
-                                  "Connect Four 2014", sf::Style::Fullscreen);
-    } else {
-        win = new sf::RenderWindow(sf::VideoMode(840, 600), "Connect Four 2014");
-    }
-//    win->setVerticalSyncEnabled(true);
-
-    font.loadFromFile(resourcePath() + "JLSSpaceGothicR_NC.otf");
-    font2.loadFromFile(resourcePath() + "DroidSansMono.ttf");
-    player[0] = Player(0);
-    player[1] = Player(1);
-
-    rect.setFillColor(sf::Color::Blue);
-    rect.setOutlineColor(sf::Color::Cyan);
-    rect.setOutlineThickness(5);
-
-    for (int i = 0; i < 7; ++i) {
-        column[i].reserve(6);
-        for (int j = 0; j < 6; ++j) {
-            column[i].push_back(sf::CircleShape());
+    struct Player
+    {
+        int id;
+        std::string splay, swin, sthink, shuman, scomp;
+        sf::Color color, hicolor, locolor;
+        Player(int id)
+        {
+            if (id) {
+                splay = "PLAYER 2 TO PLAY";
+                swin = "PLAYER 2 WINS";
+                sthink = "PLAYER 2 IS THINKING ...";
+                color = sf::Color(0xE8,0xE8,0);
+                locolor = sf::Color(0xD8,0xD8,0x20);
+                hicolor = sf::Color::Yellow;
+            } else {
+                splay = "PLAYER 1 TO PLAY";
+                swin = "PLAYER 1 WINS";
+                sthink = "PLAYER 1 IS THINKING ...";
+                color = sf::Color(0xE8,0,0);
+                locolor = sf::Color(0xC8,0,0x20);
+                hicolor = sf::Color::Red;
+            }
+            shuman = "HUMAN";
+            scomp = "COMPUTER";
         }
+    };
+
+    std::unique_ptr<sf::RenderWindow> win;
+    sf::RectangleShape rect;
+    std::vector<std::vector<sf::CircleShape>> column;
+    std::array<Player,2> player;
+
+    sf::Font font;
+    sf::Font font2;
+    sf::Text txInfo;
+    sf::Text txMsg;
+    sf::Text txPAlg[2];
+    sf::Text txColNum[7];
+    sf::Text txHelp;
+    sf::Text txPType[2], txVs;
+    sf::Text txFPS;
+
+    sf::Texture backgroundTexture;
+    sf::Sprite background; // (gpu) memory consumption??
+    bool fullscreen;
+
+    Impl(bool fullscreen):
+        column(7),
+        player{ Player(0), Player(1) },
+        fullscreen(fullscreen)
+    {
+        win = fullscreen ? std::make_unique<sf::RenderWindow>(
+                                        sf::VideoMode::getFullscreenModes()[0],
+                                        "Connect Four 2014",
+                                        sf::Style::Fullscreen)
+                         : std::make_unique<sf::RenderWindow>(sf::VideoMode(840, 600),
+                                                              "Connect Four 2014");
+    //    win->setVerticalSyncEnabled(true);
+
+        static const std::string resource_path = "./res/";
+
+        font.loadFromFile(resource_path + "JLSSpaceGothicR_NC.otf");
+        font2.loadFromFile(resource_path + "DroidSansMono.ttf");
+
+        rect.setFillColor(sf::Color::Blue);
+        rect.setOutlineColor(sf::Color::Cyan);
+        rect.setOutlineThickness(5);
+
+        for (int i = 0; i < 7; ++i) {
+            column[i].reserve(6);
+            for (int j = 0; j < 6; ++j) {
+                column[i].push_back(sf::CircleShape());
+            }
+        }
+
+        txInfo.setFont(font);
+        txInfo.setCharacterSize(24);
+        txInfo.setStyle(sf::Text::Regular);
+
+        for (int i = 0; i < 2; ++i) {
+            txPType[i].setFont(font);
+            txPType[i].setCharacterSize(20);
+            txPType[i].setStyle(sf::Text::Regular);
+            txPType[i].setFillColor(player[i].hicolor);
+            txPAlg[i].setFont(font2);
+            txPAlg[i].setCharacterSize(15);
+            txPAlg[i].setStyle(sf::Text::Regular);
+            txPAlg[i].setFillColor(player[i].hicolor);
+        }
+
+        txVs.setFont(font);
+        txVs.setCharacterSize(20);
+        txVs.setStyle(sf::Text::Regular);
+        txVs.setString(std::string("vs"));
+
+        txHelp.setFont(font);
+        txHelp.setCharacterSize(20);
+        txHelp.setFillColor(sf::Color::Yellow);
+        txHelp.setStyle(sf::Text::Regular);
+        txHelp.setString("Connect Four 2014\n"
+                         "   (c) 2014\n"
+                         "George M. Tzoumas\n\n"
+
+                         "1-7 ... Column to play\n"
+                         "  $ ... Restart\n"
+                         "  @ ... 2-player (human)\n"
+                         "  A ... Algorithm selection\n"
+                         "  C ... Compute\n"
+                         "  D ... Demo\n"
+                         "  F ... Forward\n"
+                         "  T ... Takeback\n\n"
+
+                         "  Q or Esc\n"
+                         "    ... Quit\n\n"
+
+                         "  S ...  Sound on/off\n\n"
+
+                         "  Sys-F or Alt-Enter\n"
+                         "    ... Toggle fullscreen\n"
+                         );
+
+        txMsg.setFont(font2);
+        txMsg.setCharacterSize(15);
+        txMsg.setFillColor(sf::Color::Cyan);
+        txMsg.setStyle(sf::Text::Regular);
+
+        txFPS.setFont(font2);
+        txFPS.setCharacterSize(8);
+        txFPS.setFillColor(sf::Color::White);
+        txFPS.setStyle(sf::Text::Regular);
+        txFPS.setPosition(0,0);
+
+        for (int i = 0; i < 7; ++i) {
+            txColNum[i].setFont(font);
+            txColNum[i].setCharacterSize(24);
+            txColNum[i].setStyle(sf::Text::Regular);
+            txColNum[i].setFillColor(sf::Color::Cyan);
+            txColNum[i].setString(std::string(1,'1'+i));
+        }
+
+        backgroundTexture.loadFromFile(resource_path  + "perseus_nasamarshall_3929624300.jpg");
+        background.setTexture(backgroundTexture);
+
+        update_geometry();
     }
 
-    txInfo.setFont(font);
-    txInfo.setCharacterSize(24);
-    txInfo.setStyle(sf::Text::Regular);
+    void update_geometry();
+    void mark_pos(int row, int col, int pl);
+};
 
-    for (int i = 0; i < 2; ++i) {
-        txPType[i].setFont(font);
-        txPType[i].setCharacterSize(20);
-        txPType[i].setStyle(sf::Text::Regular);
-        txPType[i].setColor(player[i].hicolor);
-        txPAlg[i].setFont(font2);
-        txPAlg[i].setCharacterSize(15);
-        txPAlg[i].setStyle(sf::Text::Regular);
-        txPAlg[i].setColor(player[i].hicolor);
-    }
+GameView::GameView(bool fullscreen):
+    _impl{ std::make_unique<Impl>(fullscreen) }
+{}
 
-    txVs.setFont(font);
-    txVs.setCharacterSize(20);
-    txVs.setStyle(sf::Text::Regular);
-    txVs.setString(std::string("vs"));
+GameView::~GameView() = default;
 
-    txHelp.setFont(font);
-    txHelp.setCharacterSize(20);
-    txHelp.setColor(sf::Color::Yellow);
-    txHelp.setStyle(sf::Text::Regular);
-    txHelp.setString("Connect Four 2014\n"
-                     "   (c) 2014\n"
-                     "George M. Tzoumas\n\n"
-
-                     "1-7 ... Column to play\n"
-                     "  $ ... Restart\n"
-                     "  @ ... 2-player (human)\n"
-                     "  A ... Algorithm selection\n"
-                     "  C ... Compute\n"
-                     "  D ... Demo\n"
-                     "  F ... Forward\n"
-                     "  T ... Takeback\n\n"
-
-                     "  Q or Esc\n"
-                     "    ... Quit\n\n"
-
-                     "  S ...  Sound on/off\n\n"
-
-                     "  Sys-F or Alt-Enter\n"
-                     "    ... Toggle fullscreen\n"
-                     );
-
-    txMsg.setFont(font2);
-    txMsg.setCharacterSize(15);
-    txMsg.setColor(sf::Color::Cyan);
-    txMsg.setStyle(sf::Text::Regular);
-
-    txFPS.setFont(font2);
-    txFPS.setCharacterSize(8);
-    txFPS.setColor(sf::Color::White);
-    txFPS.setStyle(sf::Text::Regular);
-    txFPS.setPosition(0,0);
-
-    for (int i = 0; i < 7; ++i) {
-        txColNum[i].setFont(font);
-        txColNum[i].setCharacterSize(24);
-        txColNum[i].setStyle(sf::Text::Regular);
-        txColNum[i].setColor(sf::Color::Cyan);
-        txColNum[i].setString(std::string(1,'1'+i));
-    }
-
-    backgroundTexture.loadFromFile(resourcePath()  + "perseus_nasamarshall_3929624300.jpg");
-    background.setTexture(backgroundTexture);
-
-    updateGeometry();
-}
-
-void GameView::updateGeometry()
+void GameView::Impl::update_geometry()
 {
     sf::Vector2f size(win->getSize());
     size.y -= 80;
@@ -166,21 +238,21 @@ void GameView::updateGeometry()
     background.setScale(sf::Vector2f(v1.x/v2.x, v1.y/v2.y));
 }
 
-sf::Vector2i GameView::getGrid(sf::Vector2f pos)
+std::pair<int,int> GameView::getGrid(float x, float y)
 {
     float dist = 1.0e6;
     int row = -1, col = -1;
-    float dx = (column[1][0].getPosition().x-column[0][0].getPosition().x)/2;
-    float rad = column[0][0].getRadius();
+    float dx = (_impl->column[1][0].getPosition().x-_impl->column[0][0].getPosition().x)/2;
+    float rad = _impl->column[0][0].getRadius();
     for (int i = 0; i < 7; ++i) {
         for (int j = 0; j < 6; ++j) {
-            sf::Vector2f p = column[i][j].getPosition();
+            sf::Vector2f p = _impl->column[i][j].getPosition();
             sf::Vector2f center(p.x+dx,p.y+dx);
-            float d = std::sqrt(std::pow(pos.x-center.x,2)+std::pow(pos.y-center.y,2));
+            float d = std::sqrt(std::pow(x-center.x,2)+std::pow(y-center.y,2));
             if (d <= rad && d < dist) dist = d, row = j, col = i;
         }
     }
-    return sf::Vector2i(col,row);
+    return {col,row};
 }
 
 void GameView::update(Game *g)
@@ -189,16 +261,17 @@ void GameView::update(Game *g)
     static const std::string DRAW = "DRAW";
     State s = g->state();
     for (int i = 0; i < 2; ++i) {
-        txPType[i].setString(g->is_demo(i) ? player[i].scomp : player[i].shuman);
-        txPAlg[i].setString(ALG[(g->think_algo & (1<<i)) != 0]);
+        _impl->txPType[i].setString(g->is_demo(i) ? _impl->player[i].scomp
+                                                  : _impl->player[i].shuman);
+        _impl->txPAlg[i].setString(ALG[(g->think_algo & (1<<i)) != 0]);
     }
     for (int i = 0; i < 7; ++i) {
         for (int j = 0; j < 6; ++j) {
 			sf::Color color = sf::Color::Black;
             int c = s.get(j,i);
-			if (c >= 0) color = player[c].color;
+            if (c >= 0) color = _impl->player[c].color;
 //            else color = sf::Color::White;
-			sf::CircleShape &t = column[i][j];
+            sf::CircleShape &t = _impl->column[i][j];
 //            t.setTexture(&backgroundTexture);
 			t.setFillColor(color);
 			t.setOutlineThickness(2);
@@ -207,111 +280,94 @@ void GameView::update(Game *g)
 	}
     if (!s.is_empty()) {
         int l = s.last_column();
-        mark_pos(s.column_height(l)-1, s.last_column(), s.last_player());
+        _impl->mark_pos(s.column_height(l)-1, s.last_column(), s.last_player());
 	}
     if (s.is_terminal()) {
         int p = s.last_player();
         int w = s.winner_info();
-        if (w == 2) txInfo.setString(DRAW);
-        else txInfo.setString(player[p].swin);
-        if ((w & 3) < 2) txInfo.setColor(player[p].color);
-        else txInfo.setColor(sf::Color::White);
+        if (w == 2) _impl->txInfo.setString(DRAW);
+        else _impl->txInfo.setString(_impl->player[p].swin);
+        if ((w & 3) < 2) _impl->txInfo.setFillColor(_impl->player[p].color);
+        else _impl->txInfo.setFillColor(sf::Color::White);
         if ((w & 3) < 2) {
 			int dir = w >> 8;
 			int row = (w >> 2) & 7;
 			int col = (w >> 5) & 7;
 			if (dir == 0) {
-                for (int i = 0; i < 4; ++i) mark_pos(row, col+i, p);
+                for (int i = 0; i < 4; ++i) _impl->mark_pos(row, col+i, p);
 			} else if (dir == 1) {
-                for (int i = 0; i < 4; ++i) mark_pos(row+i, col, p);
+                for (int i = 0; i < 4; ++i) _impl->mark_pos(row+i, col, p);
 			} else if (dir == 2) {
-                for (int i = 0; i < 4; ++i) mark_pos(row+i, col+i, p);
+                for (int i = 0; i < 4; ++i) _impl->mark_pos(row+i, col+i, p);
 			} else if (dir == 3) {
-                for (int i = 0; i < 4; ++i) mark_pos(row+i, col-i, p);
+                for (int i = 0; i < 4; ++i) _impl->mark_pos(row+i, col-i, p);
 			}
 		}
 	} else {
         int p = s.next_player();
-        if (g->is_demo(p)) txInfo.setString(player[p].sthink);
-        else txInfo.setString(player[p].splay);
-		txInfo.setColor(player[p].hicolor);
+        if (g->is_demo(p)) _impl->txInfo.setString(_impl->player[p].sthink);
+        else _impl->txInfo.setString(_impl->player[p].splay);
+        _impl->txInfo.setFillColor(_impl->player[p].hicolor);
     }
-    txMsg.setString(g->get_msg());
+    _impl->txMsg.setString(g->get_msg());
 }
-    
+
 void GameView::render() const 
 {
-    win->clear();
+    _impl->win->clear();
     //    win->pushGLStates();
-    win->draw(background);
-    win->draw(rect);
+    _impl->win->draw(_impl->background);
+    _impl->win->draw(_impl->rect);
     for (int i = 0; i < 7; ++i) {
         for (int j = 0; j < 6; ++j) {
-			win->draw(column[i][j]);
+            _impl->win->draw(_impl->column[i][j]);
 		}
-		win->draw(txColNum[i]);
+        _impl->win->draw(_impl->txColNum[i]);
 	}
-    win->draw(txInfo);
-    win->draw(txHelp);
-    win->draw(txPType[0]);
-    win->draw(txVs);
-    win->draw(txPType[1]);
+    _impl->win->draw(_impl->txInfo);
+    _impl->win->draw(_impl->txHelp);
+    _impl->win->draw(_impl->txPType[0]);
+    _impl->win->draw(_impl->txVs);
+    _impl->win->draw(_impl->txPType[1]);
 //    win->popGLStates();
-    win->draw(txMsg);
-    win->draw(txPAlg[0]);
-    win->draw(txPAlg[1]);
-    win->draw(txFPS);
-    win->display();
+    _impl->win->draw(_impl->txMsg);
+    _impl->win->draw(_impl->txPAlg[0]);
+    _impl->win->draw(_impl->txPAlg[1]);
+    _impl->win->draw(_impl->txFPS);
+    _impl->win->display();
 }
 
 void GameView::setFullscreen(bool enabled)
 {
-    win->close();
-    if (enabled) win->create(sf::VideoMode::getFullscreenModes()[0],
+    _impl->win->close();
+    if (enabled) _impl->win->create(sf::VideoMode::getFullscreenModes()[0],
                              "Connect Four 2014", sf::Style::Fullscreen);
-    else win->create(sf::VideoMode(840, 600), "Connect Four 2014");
-    updateGeometry();
+    else _impl->win->create(sf::VideoMode(840, 600), "Connect Four 2014");
+    _impl->update_geometry();
     render();
-    _fullscreen = enabled;
+    _impl->fullscreen = enabled;
 }
 
-GameView::Player::Player(int id): id(id) 
-{
-	if (id) {
-		splay = "PLAYER 2 TO PLAY";
-		swin = "PLAYER 2 WINS";
-		sthink = "PLAYER 2 IS THINKING ...";
-		color = sf::Color(0xE8,0xE8,0);
-		locolor = sf::Color(0xD8,0xD8,0x20);
-		hicolor = sf::Color::Yellow;
-	} else {
-        splay = "PLAYER 1 TO PLAY";
-		swin = "PLAYER 1 WINS";
-		sthink = "PLAYER 1 IS THINKING ...";
-        color = sf::Color(0xE8,0,0);
-		locolor = sf::Color(0xC8,0,0x20);
-		hicolor = sf::Color::Red;
-	}
-    shuman = "HUMAN";
-    scomp = "COMPUTER";
-}
+bool GameView::isFullscreen() const { return _impl->fullscreen; }
 
-void GameView::mark_pos(int row, int col, int pl) 
+void GameView::Impl::mark_pos(int row, int col, int pl)
 {
-	sf::CircleShape &t = column[col][row];
+    auto& t = column[col][row];
 	t.setOutlineThickness(3);
 	t.setOutlineColor(sf::Color::White);
-	t.setFillColor(player[pl].locolor);
+    t.setFillColor(player[pl].locolor);
 }
 
-void GameView::set_fps_string(double fps)
+void GameView::setFpsString(double fps)
 {
     char buf[128];
     buf[sizeof(buf)-1] = 0;
     snprintf(buf, sizeof(buf)-1, "%5.2f", fps);
-    txFPS.setString( buf );
+    _impl->txFPS.setString( buf );
     // which one is faster? :)
 //    std::ostringstream os;
 //    os << fps;
-//    txFPS.setString( os.str() );
+//    _impl->txFPS.setString( os.str() );
 }
+
+sf::RenderWindow* GameView::getWindow() const { return _impl->win.get(); }

@@ -22,9 +22,9 @@
 #ifndef _CONNECT4_H_
 #define _CONNECT4_H_
 
-#include<ostream>
-#include<algorithm>
-#include<strings.h>
+#include <iosfwd>
+#include <algorithm>
+#include <strings.h>
 //#include"mcts.h"
 
 #ifdef __linux
@@ -51,6 +51,10 @@ class State {
     // MMM = 0..6 last column played, 7 = NONE
     // P = last player played (0 or 1)
 public:
+    struct Hasher {
+        auto operator()(State s) const { return s.hash_value(); }
+    };
+
     class iterator {
         int i;
         const State *ref;
@@ -58,7 +62,7 @@ public:
     public:
         iterator(const State &s): i(0), ref(&s) {
             for (int i = 0; i < 7; ++i) sh[i] = i;
-            std::random_shuffle(sh,sh+7); // randomize branches
+//            std::random_shuffle(sh,sh+7); // randomize branches
             for (int i = 0; i < 7; ++i) {
                 if (ref->column_height(sh[i]) == 6) continue;
                 State s = ref->make_move(sh[i], ref->next_player());
@@ -89,6 +93,8 @@ public:
     
     State() { std::fill(column, column+7, 1); column[7] = 0x0F; }
     
+    iterator children() const { return iterator(*this); }
+
     State make_move(int col, int who) const {
         State ret(*this);
         ret.drop(col,who);
@@ -126,17 +132,7 @@ public:
     
     int next_player() const { return !last_player(); }
     
-    void dump(std::ostream& s) {
-        for (int i = 5; i >= 0; i--) {
-            for (int j = 0; j < 7; ++j)
-                s << symbol(get(i,j)) << "  ";
-            s << std::endl;
-        }
-        s << "0  1  2  3  4  5  6" << std::endl;
-//        for (int i = 0; i < 7; ++i)
-//            s << column_height(i) << " ";
-        s << " last = " << last_column() << " winner = " << winner() << std::endl;
-    }
+    void dump(std::ostream& s) const;
 
     bool is_terminal() const { return winner() < 3; }
     
@@ -189,6 +185,12 @@ public:
     }
     long long hash_value() const { return rep & BOARD_MASK; } // perfect hash
     
+    State up() const {
+        State s = *this;
+        s.undrop();
+        return s;
+    }
+
     int empty_space() const {
         return 42 - column_height(0) - column_height(1) - column_height(2) -
         column_height(3) - column_height(4) - column_height(5) -
@@ -215,15 +217,29 @@ public:
     }
     
 private:
-    static const long long BOARD_MASK = 0x00FFFFFFFFFFFFFF;
+    static constexpr long long BOARD_MASK = 0x00FFFFFFFFFFFFFF;
+
     void drop(int col, int who) {
-        int h = column_height(col);
+        const int h = column_height(col);
         if (h >= 6) return;
         column[col] &= (1 << h) - 1;
         column[col] |= (2+who) << h; 
         column[7] = (who << 3) | col;
     }
-    
+
+    bool undrop() {
+        const int col = last_column();
+        if (col > 6) return false;
+        int h = column_height(col);
+        if (h == 0) return false;
+        --h;
+        column[col] &= (1 << h) - 1;
+        column[col] |= 1 << h;
+        const int who = last_player();
+        column[7] = ((!who) << 3) | 7;
+        return true;
+    }
+
     static char symbol(int k) {
         if (k == 0) return 'X';
         if (k == 1) return 'O';

@@ -22,72 +22,53 @@
 #ifndef _GAMEVIEW_H_
 #define _GAMEVIEW_H_
 
-#include <string>
-#include "connect4.h"
-#include <SFML/Graphics.hpp>
+#include <memory>
+#include <utility>
 
-#include<iostream>
-#include<string>
+namespace sf
+{
+    class RenderWindow;
+}
 
 class Game;
 
-struct ViewBase {
+struct ViewBase
+{
+    virtual ~ViewBase();
     virtual void update(Game *g) = 0;
     virtual void render() const = 0;
-    virtual bool is_fullscreen() const = 0;
+    virtual bool isFullscreen() const = 0;
     virtual void setFullscreen(bool enabled) = 0;
-    void toggleFullscreen() { setFullscreen(!is_fullscreen()); }
-    virtual std::string resourcePath() { return "./res/"; }
+    void toggleFullscreen() { setFullscreen(!isFullscreen()); }
 };
 
-struct DummyView: public ViewBase {
-    void update(Game *g) { }
-	void render() const { }
-    bool is_fullscreen() const { return false; }
-    void setFullscreen(bool enabled) { }
-};
-
-class GameView: public ViewBase {
-public:
-    GameView(bool fullscreen = false);
+struct DummyView: public ViewBase
+{
     void update(Game *g);
     void render() const;
-    bool is_fullscreen() const { return _fullscreen; }
+    bool isFullscreen() const;
+    void setFullscreen(bool enabled);
+};
+
+class GameView: public ViewBase
+{
+public:
+    GameView(bool fullscreen = false);
+    ~GameView();
+
+    void update(Game *g);
+    void render() const;
+    bool isFullscreen() const;
     void setFullscreen(bool enabled);
 
-    sf::RenderWindow *getWindow() const { return win; }
+    sf::RenderWindow* getWindow() const;
 
-    sf::Vector2i getGrid(sf::Vector2f pos);
-    void set_fps_string( double fps );
+    std::pair<int,int> getGrid(float x, float y);
+    void setFpsString( double fps );
 
 private:
-	struct Player {
-		int id;
-        std::string splay, swin, sthink, shuman, scomp;
-		sf::Color color, hicolor, locolor;
-		Player() { }
-		Player(int id);
-	};
-	sf::RenderWindow *win;
-    sf::RectangleShape rect;
-    std::vector<std::vector<sf::CircleShape>> column;
-    Player player[2];
-    sf::Font font;
-    sf::Font font2;
-    sf::Text txInfo;
-    sf::Text txMsg;
-    sf::Text txPAlg[2];
-    sf::Text txColNum[7];
-    sf::Text txHelp;
-    sf::Text txPType[2], txVs;
-    sf::Text txFPS;
-    sf::Texture backgroundTexture;
-    sf::Sprite background; // (gpu) memory consumption??
-    bool _fullscreen;
-
-    void setString(sf::Text& tx, const std::string &s);
-    void updateGeometry();
-    void mark_pos(int row, int col, int pl);
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 #endif
