@@ -21,6 +21,7 @@
 
 #include "gameview.h"
 #include "game.h"
+#include "connect4.hpp"
 
 #include <cmath>
 #include <cstdio>

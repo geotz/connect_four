@@ -30,6 +30,11 @@
 #include "game.h"
 #include "frameratecontroller.h"
 #include "arguments.hpp"
+#include "connect4.hpp"
+
+#include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 
 #include <vector>
 #include <iostream>
@@ -37,9 +42,6 @@
 #include <cstdlib>
 #include <ctime>
 
-#include <SFML/Window/Event.hpp>
-#include <SFML/Window/Keyboard.hpp>
-#include <SFML/Graphics/RenderWindow.hpp>
 
 struct Options
 {
@@ -66,7 +68,7 @@ int main(int argc, char **argv)
 
     GameView gv(!opt.windowed);
 	AudioInterface aud;
-    Game game(&gv, &aud);
+    Game game(gv, aud);
 
     std::srand(std::time(NULL));
 
@@ -74,7 +76,7 @@ int main(int argc, char **argv)
     FrameRateController fps{opt.frame_rate};
 //    win->setFramerateLimit(0);
 
-    if (opt.demo) game.ac_demo();
+    if (opt.demo) game.acDemo();
     while (win->isOpen())
     {
         sf::Event event;
@@ -90,10 +92,10 @@ int main(int argc, char **argv)
                 case sf::Event::TextEntered:
 					switch (int c = event.text.unicode) {
 						case '$':
-							game.ac_restart();
+							game.acRestart();
 							break;
 						case '@':
-							game.ac_2player();
+							game.ac2Player();
 							break;
 							
 						case '1':
@@ -103,7 +105,7 @@ int main(int argc, char **argv)
 						case '5':
 						case '6':
 						case '7':
-							game.ac_play(c-'1');
+							game.acPlay(c-'1');
 							break;
 					}
 					break;
@@ -115,26 +117,26 @@ int main(int argc, char **argv)
                             win->close();
                             break;
                         case sf::Keyboard::C:
-                            game.ac_compute();
+                            game.acCompute();
                             break;
                         case sf::Keyboard::A:
-                            game.ac_toggle_algo();
+                            game.acToggleAlgo();
                             break;
                         case sf::Keyboard::D:
-                            game.ac_demo();
+                            game.acDemo();
                             break;
                         case sf::Keyboard::F:
-                            if (event.key.system) game.ac_toggle_fullscreen();
-                            else game.ac_forward();
+                            if (event.key.system) game.acToggleFullscreen();
+                            else game.acForward();
                             break;
                         case sf::Keyboard::S:
-                            game.ac_toggle_sound();
+                            game.acToggleSound();
                             break;
                         case sf::Keyboard::T:
-                            game.ac_takeback();
+                            game.acTakeback();
                             break;
                         case sf::Keyboard::Return:
-                            if (event.key.alt) game.ac_toggle_fullscreen();
+                            if (event.key.alt) game.acToggleFullscreen();
                             break;
                         default:
                             break;
@@ -147,7 +149,7 @@ int main(int argc, char **argv)
                     //std::cerr << "x = " << v.x << " y = " << v.y << std::endl;
                     auto [x,y] = gv.getGrid(v.x, v.y);
                     //std::cerr << "row = " << y << " col = " << x << std::endl;
-                    game.ac_play(y, x);
+                    game.acPlay(y, x);
                 }
                     break;
                 default:
@@ -158,7 +160,7 @@ int main(int argc, char **argv)
         gv.setFpsString( fps.real_fps() );
         game.render();
         fps();
-        if (game.is_demo(game.state().next_player())) game.ac_play();
+        if (game.is_demo(game.state().next_player())) game.acPlay();
     }
     return 0;
 }

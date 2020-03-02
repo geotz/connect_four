@@ -19,56 +19,63 @@
 
 // game model implementation
 
-#include<sstream>
+#include <sstream>
 
-#include"game.h"
-#include"alphabeta.hpp"
-#include"mcts.hpp"
+#include "game.h"
+#include "gameview.h"
+#include "audio.h"
+#include "connect4.hpp"
 
-Game::Game(ViewBase* view, AudioBase* audio):
-    view(view), audio(audio), msg(" "), think_algo(1)
+#include "alphabeta.hpp"
+#include "mcts.hpp"
+
+Game::Game(ViewBase& view, AudioBase& audio):
+    think_algo(1),
+    _view(view),
+    _audio(audio),
+    _msg(" ")
 {
-    ac_restart();
+    acRestart();
 }
 
 State Game::state() const
 {
-    if (move) return history[move-1];
+    if (_move) return _history[_move-1];
     return State();
 }
 
-void Game::ac_restart()
+void Game::acRestart()
 {
-    demo[0] = false; demo[1] = true;
-    move = 0; max_move = 0;
-    depth = 10;
-    audio->play(AudioBase::RESTART);
-    view->update(this);
+    _demo[0] = false; _demo[1] = true;
+    _move = 0; _max_move = 0;
+    _depth = 10;
+    _audio.play(AudioBase::RESTART);
+    _view.update(this);
 }
 
 State Game::alphabeta_think()
 {
-    static const int MIN_MOVES = 2000000;
+    static constexpr int MIN_MOVES = 2000000;
     int moves = 0;
     State s = state();
     State q;
     using Policy = DefaultPolicy<State>;
 //    using Policy = NoPolicy<State>;
     State::score_type val = alpha_beta<State,Policy>(s, State::MINUS_INFINITY, State::PLUS_INFINITY, true,
-                                       s.next_player(), depth, 0, &q, &moves);
+                                       s.next_player(), _depth, 0, &q, &moves);
     std::stringstream ss;
     ss << "AB(" << s.next_player() << ")" << std::endl
        << "moves = " << moves << std::endl
-       << "depth = " << depth << std::endl << "score = " << val;
-    msg = ss.str();
-    view->update(this);
-    if (moves < MIN_MOVES) ++depth;
+       << "depth = " << _depth << std::endl << "score = " << val;
+    _msg = ss.str();
+    _view.update(this);
+    if (moves < MIN_MOVES) ++_depth;
     return q;
 }
 
 State Game::mcts_think()
 {
-    static const int NUM_SAMPLES = 10000;
+    static constexpr int NUM_SAMPLES = 10000;
     State::score_type val;
     State s = state();
     auto t0 = std::chrono::steady_clock::now();
@@ -90,114 +97,119 @@ State Game::mcts_think()
     std::stringstream ss;
     ss << "MC(" << s.next_player() << ") " << dur.count() << 's' << std::endl
        << "samples = " << NUM_SAMPLES << std::endl << "score = " << val;
-    msg = ss.str();
-    view->update(this);
+    _msg = ss.str();
+    _view.update(this);
     return q;
 }
 
-bool Game::ac_play(int where)
+bool Game::acPlay(int where)
 {
     State s = state();
     if (s.is_terminal()) return false;
-    if (demo[s.next_player()]) { // computer play
+    if (_demo[s.next_player()]) { // computer play
         State q;
         if (s == State()) q = s.make_move(3, s.next_player()); // center heuristic
         else q = (think_algo & (1 << s.next_player())) ? mcts_think() : alphabeta_think();
         auto sampleIndex = static_cast<AudioBase::e_sample>(s.column_height(q.last_column())+1);
-        audio->play(sampleIndex);
-        history[move++] = q;
-        max_move = move;
-        if (q.winner() == q.last_player() && !demo[q.next_player()])
-            audio->play(AudioBase::LOSER);
-        view->update(this);
+        _audio.play(sampleIndex);
+        _history[_move++] = q;
+        _max_move = _move;
+        if (q.winner() == q.last_player() && !_demo[q.next_player()])
+            _audio.play(AudioBase::LOSER);
+        _view.update(this);
         return true;
     } else if (s.column_height(where) < 6) { // human play
         auto sampleIndex = static_cast<AudioBase::e_sample>(s.column_height(where)+1);
-        audio->play(sampleIndex);
-        history[move++] = s.make_move(where, s.next_player());
-        max_move = move;
+        _audio.play(sampleIndex);
+        _history[_move++] = s.make_move(where, s.next_player());
+        _max_move = _move;
         State q = state();
-        if (q.winner() == q.last_player() && demo[q.next_player()])
-            audio->play(AudioBase::WINNER);
+        if (q.winner() == q.last_player() && _demo[q.next_player()])
+            _audio.play(AudioBase::WINNER);
 //        std::cerr << "heuristic = " << q() << std::endl;
-        view->update(this);
+        _view.update(this);
         return true;
     }
-    audio->play(AudioBase::ERROR);
+    _audio.play(AudioBase::ERROR);
     return false;
 }
 
-bool Game::ac_play(int row, int col)
+bool Game::acPlay(int row, int col)
 {
 //    State s = state();
-    if (col >= 0) return ac_play(col); // && s.column_height(col) == row
-    audio->play(AudioBase::ERROR);
+    if (col >= 0) return acPlay(col); // && s.column_height(col) == row
+    _audio.play(AudioBase::ERROR);
     return false;
 }
 
-void Game::ac_compute()
+void Game::acCompute()
 {
     State s = state();
     if (s.is_terminal()) return;
-    demo[s.next_player()] = true;
-    demo[s.last_player()] = false;
-    view->update(this);
+    _demo[s.next_player()] = true;
+    _demo[s.last_player()] = false;
+    _view.update(this);
 //        ac_play(); // called from outside, in main loop
 }
 
-void Game::ac_toggle_algo()
+void Game::acToggleAlgo()
 {
     think_algo = (think_algo + 1) & 3;
-    view->update(this);
+    _view.update(this);
 }
 
-bool Game::ac_takeback()
+bool Game::acTakeback()
 {
-    if (move) {
-        --move;
+    if (_move) {
+        --_move;
         int p = state().next_player();
-        if (demo[p]) demo[p] = false, demo[!p] = true;
-        audio->play(AudioBase::WARNING);
-        view->update(this);
+        if (_demo[p]) _demo[p] = false, _demo[!p] = true;
+        _audio.play(AudioBase::WARNING);
+        _view.update(this);
         return true;
     }
-    audio->play(AudioBase::ERROR);
+    _audio.play(AudioBase::ERROR);
     return false;
 }
 
-void Game::ac_2player()
+void Game::ac2Player()
 {
-    demo[0] = demo[1] = false;
-    view->update(this);
+    _demo[0] = _demo[1] = false;
+    _view.update(this);
 }
 
-void Game::ac_demo()
+void Game::acDemo()
 {
-    demo[0] = demo[1] = true;
-    view->update(this);
+    _demo[0] = _demo[1] = true;
+    _view.update(this);
 }
 
-bool Game::ac_forward()
+bool Game::acForward()
 {
-    if (move < max_move) {
-        ++move;
+    if (_move < _max_move) {
+        ++_move;
         int p = state().next_player();
-        if (demo[p]) demo[p] = false, demo[!p] = true;
-        audio->play(AudioBase::WARNING);
-        view->update(this);
+        if (_demo[p]) _demo[p] = false, _demo[!p] = true;
+        _audio.play(AudioBase::WARNING);
+        _view.update(this);
         return true;
     }
-    audio->play(AudioBase::ERROR);
+    _audio.play(AudioBase::ERROR);
     return false;
 }
 
-void Game::ac_toggle_sound()
+void Game::acToggleSound()
 {
-    audio->toggle();
-    audio->play(AudioBase::INFO);
+    _audio.toggle();
+    _audio.play(AudioBase::INFO);
 }
 
-void Game::ac_toggle_fullscreen()
+void Game::acToggleFullscreen()
 {
-    view->toggleFullscreen();
+    _view.toggleFullscreen();
+}
+
+void Game::render() const
+{
+    _view.render();
 }

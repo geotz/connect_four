@@ -25,6 +25,7 @@ endforeach()
 set(SOURCES 
     include/alphabeta.hpp
     include/audio.h 
+    include/connect4.h
     include/connect4.hpp
     include/frameratecontroller.h 
     include/game.h

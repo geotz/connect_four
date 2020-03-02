@@ -26,7 +26,10 @@
 #include <limits>
 
 FrameRateController::FrameRateController(int fps, double rel_win):
-    _real_fps{std::numeric_limits<double>::quiet_NaN()}, _rwin(rel_win), _sleep{2e-9}, _count{0}
+    _real_fps{std::numeric_limits<double>::quiet_NaN()},
+    _rwin(rel_win),
+    _sleep{2.0e-9},
+    _count{0}
 {
     set_fps(fps);
 }
@@ -35,7 +38,7 @@ FrameRateController::FrameRateController(int fps, double rel_win):
 void FrameRateController::set_fps(int fps)
 {
     _fps = fps;
-    _t0 = steady_clock::now();
+    _t0 = hr_clock::now();
 }
 
 void FrameRateController::set_rwin(double rwin)
@@ -48,7 +51,7 @@ void FrameRateController::operator()()
     std::this_thread::sleep_for(_sleep);
     if (++_count == _fps)
     {
-        const auto now = std::chrono::steady_clock::now();
+        const auto now = hr_clock::now();
         const auto dur = std::chrono::duration_cast<dur_t>(now - _t0);
         _t0 = now;
         _real_fps = _fps / dur.count();
@@ -57,7 +60,8 @@ void FrameRateController::operator()()
         { // too fast or too slow
             _sleep = dur_t(_sleep.count() * ratio);
 //            std::cerr << "\nadjusted sleep = " << _sleep.count() << " ns" << std::endl;
-        } else {
+        } else
+        {
             // finetuning -- quadratic
             if (ratio > 1.0) {
                 _sleep = dur_t(_sleep.count() * (1.0 + (ratio - 1.0)*(ratio - 1.0)));

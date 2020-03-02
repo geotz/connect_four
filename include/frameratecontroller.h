@@ -26,11 +26,11 @@
 
 class FrameRateController
 {
-    static constexpr double UNIT { 1.0 }; // 1 second
-    static constexpr int DEF_FPS { 50 };
-    static constexpr double DEF_REL_WIN { 0.05 };
+    static constexpr double unit_ { 1.0 }; // 1 second
+    static constexpr int def_fps_ { 50 };
+    static constexpr double def_rel_win_ { 0.05 };
 public:
-    FrameRateController(int fps = DEF_FPS, double rwin = DEF_REL_WIN);
+    FrameRateController(int fps = def_fps_, double rwin = def_rel_win_);
 
     double real_fps() const { return _real_fps; }
     int fps() const { return _fps; }
@@ -42,15 +42,15 @@ public:
     void operator()();
 
 private:
-    typedef std::chrono::steady_clock steady_clock;
-    typedef std::chrono::duration<double> dur_t;
+    using hr_clock = std::chrono::high_resolution_clock;
+    using dur_t = std::chrono::duration<double>;
 
-    double _real_fps;
-    double _rwin;
-    steady_clock::time_point _t0;
-    int _fps;
-    dur_t _sleep;
-    int _count;
+    double      _real_fps;
+    double      _rwin;
+    hr_clock::time_point _t0;
+    int         _fps;
+    dur_t       _sleep;
+    int         _count;
 };
 
-#endif // FRAMERATEADJUSTER_H
+#endif

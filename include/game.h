@@ -22,46 +22,51 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
+#include "connect4.h"
+
 #include <string>
+#include <memory>
 
-#include "connect4.hpp"
-#include "gameview.h"
-#include "audio.h"
+class ViewBase;
+class AudioBase;
+class State;
 
-class Game {
-    int move;
-    int max_move;
-    State history[42];
-    bool demo[2];
-    ViewBase *view;
-    AudioBase *audio;
-    int depth;
-    std::string msg; // algorithm stats
+class Game
+{
 public:
     int think_algo; // 0..3, bit 1: player X, bit 0: 0=AB 1=MC
 
-    Game(ViewBase* view, AudioBase* audio);
+    Game(ViewBase& _view, AudioBase& _audio);
 
-    bool is_demo(int p) const { return demo[p]; }
+    bool is_demo(int p) const { return _demo[p]; }
     State state() const;
-    const std::string& get_msg() const { return msg; }
+    const std::string& get_msg() const { return _msg; }
 
-    void ac_restart();
-    bool ac_play(int where = 0);
-    bool ac_play(int row, int col);
-    void ac_compute();
-    void ac_toggle_algo();
-    bool ac_takeback();
-    void ac_2player();
-    void ac_demo();
-    bool ac_forward();
-    void ac_toggle_sound();
-    void ac_toggle_fullscreen();
-    void render() const { view->render(); }
+    void acRestart();
+    bool acPlay(int where = 0);
+    bool acPlay(int row, int col);
+    void acCompute();
+    void acToggleAlgo();
+    bool acTakeback();
+    void ac2Player();
+    void acDemo();
+    bool acForward();
+    void acToggleSound();
+    void acToggleFullscreen();
+    void render() const;
 
 private:
     State alphabeta_think();
     State mcts_think();
+
+    int         _move;
+    int         _max_move;
+    State       _history[42];
+    bool        _demo[2];
+    ViewBase&   _view;
+    AudioBase&  _audio;
+    int         _depth;
+    std::string _msg; // algorithm stats
 };
 
 #endif
