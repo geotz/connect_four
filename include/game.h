@@ -29,7 +29,6 @@
 
 class ViewBase;
 class AudioBase;
-class State;
 
 class Game
 {
