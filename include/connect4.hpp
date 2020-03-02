@@ -230,17 +230,17 @@ inline int State::get(int row, int col) const
 inline bool State::is_empty() const
 {
     return column_height(0) == 0 && column_height(1) == 0 &&
-    column_height(2) == 0 && column_height(3) == 0 &&
-    column_height(4) == 0 && column_height(5) == 0 &&
-    column_height(6) == 0;
+            column_height(2) == 0 && column_height(3) == 0 &&
+            column_height(4) == 0 && column_height(5) == 0 &&
+            column_height(6) == 0;
 }
 
 inline bool State::is_full() const
 {
     return column_height(0) == 6 && column_height(1) == 6 &&
-    column_height(2) == 6 && column_height(3) == 6 &&
-    column_height(4) == 6 && column_height(5) == 6 &&
-    column_height(6) == 6;
+            column_height(2) == 6 && column_height(3) == 6 &&
+            column_height(4) == 6 && column_height(5) == 6 &&
+            column_height(6) == 6;
 }
     
 inline void State::drop(int col, int who)
